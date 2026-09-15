@@ -270,6 +270,7 @@ const ING = {
   fagioli:    {n:"Fagioli rossi in scatola", c:"leg", u:"scatole", r:1, s:"da 400 g"},
   passata:    {n:"Passata di pomodoro", c:"leg", u:"g", r:100},
   pesto:      {n:"Pesto", c:"leg", u:"g", r:50},
+  ragupronto: {n:"Ragù pronto (Barilla)", c:"leg", u:"g", r:180, s:"vasetto da 180 g"},
   chipotle:   {n:"Salsa chipotle", c:"leg", u:"g", r:50, s:"Old El Paso o Tabasco chipotle, reparto etnico; se manca: paprika affumicata, peperoncino e 1 cucchiaio di concentrato"},
   gocce:      {n:"Gocce di cioccolato fondente", c:"dol", u:"g", r:50},
   fondente:   {n:"Cioccolato fondente 85%", c:"dol", u:"g", r:50},
@@ -351,10 +352,6 @@ const MEALS = [
    desc:"Uno strato di avena, chia e cacao cotto fino a diventare croccante, coperto da una crema di yogurt greco al cacao, con nocciole e fondente a scaglie.",
    kcal:535, prot:30, carb:48, fat:24, ing:[["avena",40],["chia",8],["cacao",15],["latte",60],["yogurt",150],["nocciole",15],["fondente",15],["dolcif",0]],
    steps:"Impasta avena, chia, 10 g di cacao, dolcificante e il latte; stendi sottile in padella o in forno a 180 °C per 12 minuti finché croccante. Farcia: yogurt con 5 g di cacao e dolcificante. Sopra nocciole tritate e fondente a scaglie."},
-  {id:"toast", name:"Toast dolce", cats:["col"], tags:["facile","dolce"],
-   desc:"Due fette di pane integrale tostato con burro d'arachidi, banana a rondelle e fondente grattugiato. Pochissime proteine: da abbinare a uno spuntino proteico nella giornata.",
-   kcal:570, prot:18, carb:75, fat:24, ing:[["pane",80],["arachidi",30],["banane",1],["fondente",15]],
-   steps:"Tosta il pane. Burro d'arachidi, banana a rondelle, fondente grattugiato sopra."},
   {id:"bbread", name:"Banana bread al cioccolato", cats:["col"], tags:["prep","dolce","preworkout"],
    desc:"Plumcake di banane, uova, avena frullata, whey, cacao e gocce, senza zucchero. Una teglia = 9 fette = 3 porzioni da 3 fette.",
    kcal:565, prot:40, carb:66, fat:14, ing:[["@bbread",1]]},
@@ -396,18 +393,18 @@ const MEALS = [
    desc:"Carbonara con arrosto di tacchino a cubetti reso croccante al posto del guanciale, due uova e un tuorlo, pecorino e pepe.",
    kcal:830, prot:55, carb:88, fat:25, ing:[["pasta",120],["arrosto",80],["uova",3],["pecorino",30],["spezie",0]],
    steps:"Tacchino a cubetti croccante in padella senza olio. 2 uova + 1 tuorlo sbattuti con pecorino e pepe. Pasta scolata nella padella spenta, poi le uova, mescolando con un po' d'acqua di cottura finché cremosa."},
-  {id:"p_ravioli", name:"Ravioli al pomodoro", cats:["pra"], tags:["facile","salato"],
-   desc:"Ravioli freschi saltati nella passata con grana; a lato arrosto di pollo e insalata con pomodorini per arrivare alle proteine.",
-   kcal:780, prot:47, carb:76, fat:28, ing:[["ravioli",200],["passata",150],["grana",20],["arrosto",80],["insalata",0.5],["pomodorini",100]],
-   steps:"Passata scaldata con un filo d'olio. Ravioli 3–4 minuti, saltati nel sugo, grana. Insalata, pomodorini e l'arrosto a parte."},
+  {id:"p_ravioli", name:"Ravioli al pomodoro + pollo alla piastra", cats:["pra"], tags:["facile","salato"],
+   desc:"Due piatti: ravioli freschi saltati nella passata con grana, e una fetta di pollo alla piastra con insalata e pomodorini. Il pollo serve ad arrivare alle proteine, i ravioli da soli ne hanno poche.",
+   kcal:920, prot:66, carb:88, fat:31, ing:[["ravioli",200],["passata",150],["grana",20],["pollo",150],["insalata",0.5],["pomodorini",100],["olio",5]],
+   steps:"Passata scaldata con un filo d'olio. Ravioli 3–4 minuti, saltati nel sugo, grana sopra. Pollo battuto sottile alla piastra 3 minuti per lato, sale e pepe; insalata e pomodorini a lato."},
   {id:"p_pesto", name:"Pasta proteica al pesto e pollo", cats:["pra"], tags:["facile","salato"],
    desc:"Barilla Protein+ condita a crudo con pesto, pollo grigliato a striscioline e pomodorini.",
    kcal:680, prot:58, carb:65, fat:21, ing:[["pastapro",100],["pollo",150],["pesto",30],["pomodorini",100]],
    steps:"Pollo battuto sottile, grigliato 3 minuti per lato, a striscioline. Pasta scolata, pesto a crudo con un cucchiaio d'acqua di cottura, pomodorini a metà."},
-  {id:"p_ragu", name:"Pasta al ragù", cats:["pra"], tags:["medio","salato"], batchOK:1, keep:4,
-   desc:"Ragù di macinato 5% con cipolla e passata, cotto mezz'ora; il sugo regge 4 giorni, la pasta si fa al momento.",
-   kcal:830, prot:55, carb:95, fat:22, ing:[["pasta",120],["macinato",150],["passata",150],["cipolle",0.5],["grana",20],["olio",10]],
-   steps:"Cipolla in olio, macinato rosolato bene, passata e sale, 25 minuti a fuoco basso. Fai il ragù per tutte le porzioni insieme e cuoci solo la pasta al momento."},
+  {id:"p_ragu", name:"Pasta al ragù pronto + pollo alla piastra", cats:["pra"], tags:["facile","salato"],
+   desc:"Due piatti: pasta condita con un vasetto di ragù pronto Barilla e grana, e una fetta di pollo alla piastra. Nessun ragù da cucinare, dieci minuti in tutto.",
+   kcal:800, prot:63, carb:98, fat:17, ing:[["pasta",120],["ragupronto",180],["grana",20],["pollo",150],["pomodorini",100],["olio",5]],
+   steps:"Scalda il sugo in padella mentre bolle la pasta. Pollo battuto sottile alla piastra 3 minuti per lato, sale e pepe. Pasta saltata nel sugo, grana sopra, pollo e pomodorini a lato."},
   {id:"p_tonno", name:"Pasta al tonno e pomodorini", cats:["pra"], tags:["facile","salato"],
    desc:"Pasta con tonno in scatola, pomodorini saltati con aglio e pepe. Dodici minuti in tutto.",
    kcal:700, prot:56, carb:90, fat:12, ing:[["pasta",120],["tonno",2],["pomodorini",150],["olio",10],["spezie",0]],
@@ -706,7 +703,7 @@ function renderStep3(){
   const notes = [], add = (cls, txt) => notes.push(`<div class="note ${cls}">${txt}</div>`);
   if (t.kcal < TK - 150) add("bad", `Sei a ~${Math.round(t.kcal)} kcal, sotto il tuo target di ${TK}. ${state.breakfast ? "Scegli pranzi o cene più grandi (impanato, polpette, curry, quesadillas) o spuntini più pieni (piadina, shake, muffin, banana bread)." : "Senza colazione devi recuperare a pranzo e cena: piatti da 850+ kcal e spuntini pieni, oppure 30–40 g di pasta in più a pranzo."}`);
   if (t.kcal > TK + 150) add("bad", `Sei a ~${Math.round(t.kcal)} kcal, sopra il tuo target di ${TK}. Spuntini più leggeri (battuta, uova sode, mela e mandorle, brownies) o patate a 200 g nelle cene.`);
-  if (t.prot < TP - 15) add("bad", `Proteine a ${Math.round(t.prot)} g contro un target di ${TP}. Scambia toast dolce o fondente e noci con tortino, brownies, pane e arrosto o shake.`);
+  if (t.prot < TP - 15) add("bad", `Proteine a ${Math.round(t.prot)} g contro un target di ${TP}. Scambia fondente e noci o mela e mandorle con tortino, brownies, pane e arrosto o shake.`);
   else if (t.prot > TP + 60) add("info", `Proteine a ${Math.round(t.prot)} g: ben oltre il target. Non fa male, ma puoi spostare quelle calorie sui carboidrati, che in palestra rendono di più.`);
   if (t.carb < carbR[0]) add("", `Carboidrati a ${Math.round(t.carb)} g: bassi per chi si allena alle 18. Pre-workout con carbo (banana e gallette, pane e arrosto, banana bread) e porzioni di pasta piene.`);
   if (t.fat > fatR[1]) add("", `Grassi a ${Math.round(t.fat)} g: alti. Di solito sono caprese, fondente e noci, frittata e bistecca con uova negli stessi giorni: alternali.`);
