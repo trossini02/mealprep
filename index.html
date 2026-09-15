@@ -150,7 +150,7 @@
   <h1>Piano spesa</h1>
   <p class="lead" id="lead"></p>
   <div class="steps" id="steps">
-    <div class="on"><span>Imposta</span></div><div><span>Pasti</span></div><div><span>Bilancio</span></div><div><span>Calendario</span></div><div><span>Spesa</span></div>
+    <div class="on"><span>Imposta</span></div><div><span>Pasti</span></div><div><span>Bilancio</span></div><div><span>Calendario</span></div><div><span>Spesa</span></div><div><span>Ricette</span></div>
   </div>
 
   <section id="s1">
@@ -206,7 +206,11 @@
     <div id="list"></div>
     <h2>Da preparare il giorno della spesa</h2>
     <div class="prepbox" id="prep"></div>
-    <div class="copies"><button class="btn sm" id="copyprep">Copia preparazione</button><button class="btn sm" id="copymeals">Copia pasti</button></div>
+    <div class="copies"><button class="btn sm" id="copylist">Copia lista</button><button class="btn sm" id="copyprep">Copia preparazione</button></div>
+  </section>
+
+  <section id="s6" class="hidden">
+    <div id="recipes"></div>
   </section>
 </div>
 <div class="bar"><div class="in" id="bar"></div></div>
@@ -331,10 +335,10 @@ const RECIPES = {
 // batchOK: si può cucinare per più porzioni insieme · pair: le 2 porzioni vanno mangiate lo stesso giorno · keep: giorni in frigo · fresh: da mangiare entro N giorni
 const MEALS = [
   // ---------- colazioni (e spuntini: stesse dosi)
-  {id:"pancake", name:"Pancake al cioccolato", cats:["col"], tags:["facile","dolce","preworkout"], pair:1,
-   desc:"Uova, latte, farina, whey e gocce di fondente frullati e cotti in padella. Una padellata sono 2 porzioni: una a colazione e una come spuntino nello stesso giorno (la seconda finisce nell'eccesso colazioni).",
-   kcal:520, prot:27, carb:60, fat:19, ing:[["uova",1],["latte",50],["farina",50],["whey",0.5],["gocce",35]],
-   steps:"Per 2 porzioni: 2 uova, 100 ml latte, 100 g farina, 1 scoop whey, 70 g gocce (30 g in cut). Frulla tutto tranne le gocce, aggiungile alla fine. Padella antiaderente calda, un mestolo per pancake, gira quando fa le bolle."},
+  {id:"pancake", name:"Pancake al cioccolato", cats:["col"], tags:["facile","dolce","preworkout"],
+   desc:"Due uova, farina, latte e whey frullati, con il fondente a pezzetti dentro, cotti in padella. Una porzione, ~900 kcal: è la colazione più grande del piano; in cut scendi a 30 g di cioccolato.",
+   kcal:900, prot:50, carb:102, fat:35, ing:[["uova",2],["latte",70],["farina",80],["whey",1],["gocce",60]],
+   steps:"Frulla uova, latte, farina, whey e un pizzico di lievito; aggiungi il cioccolato a pezzetti alla fine. Padella antiaderente calda, un mestolo per pancake, gira quando fa le bolle."},
   {id:"porridge", name:"Porridge al cacao", cats:["col"], tags:["facile","dolce"],
    desc:"Avena cotta nel latte, whey e cacao mescolati fuori dal fuoco, banana e gocce di fondente sopra.",
    kcal:720, prot:46, carb:100, fat:16, ing:[["avena",80],["latte",250],["whey",1],["cacao",10],["banane",1],["gocce",10]],
@@ -782,7 +786,7 @@ function renderStep4(){
     const dayK = ["col","pra","spu","cen"].reduce((a, c) => a + state.cal[c][day].reduce((b, id) => b + byId(id).kcal, 0), 0);
     const dayP = ["col","pra","spu","cen"].reduce((a, c) => a + state.cal[c][day].reduce((b, id) => b + byId(id).prot, 0), 0);
     const box = document.createElement("div"); box.className = "day";
-    box.innerHTML = `<h3>Giorno ${day + 1}${day === 0 ? " · spesa" : ""}<small>~${dayK} kcal · ${dayP} g P</small></h3>`;
+    box.innerHTML = `<h3>Giorno ${day + 1}${day === 0 ? " · spesa" : ""}<small>~${dayK} kcal (target ${tkcal()}) · ${dayP} g P</small></h3>`;
     ["col","pra","spu","cen"].forEach(c => {
       if (c === "col" && !state.breakfast) return;
       const slot = document.createElement("div"); slot.className = "slot"; slot.innerHTML = `<div class="l">${LBL[c]}</div><div class="chips"></div>`;
@@ -840,7 +844,22 @@ function renderStep5(){
   const prep = prepPlan();
   $("prep").innerHTML = prep.length ? prep.map(p => `<h4>${p.title} <span class="base">· ~${p.min} min</span></h4>${p.html}<p>${p.steps}</p>`).join("") : "Con questi piatti non serve niente in anticipo.";
   $("copyprep").onclick = () => copy(prepText(), "Preparazione copiata");
-  $("copymeals").onclick = () => copy(mealsText(), "Pasti copiati");
+  $("copylist").onclick = () => copy(listText(), "Lista copiata (senza le voci spuntate)");
+}
+function renderStep6(){
+  const root = $("recipes"); root.innerHTML = "";
+  activeCats().forEach(c => {
+    const xs = selected().filter(x => x.cat === c.k); if (!xs.length) return;
+    root.insertAdjacentHTML("beforeend", `<h2>${c.name}</h2>`);
+    xs.forEach(x => {
+      const m = x.m; const box = document.createElement("div"); box.className = "meal";
+      box.innerHTML = `<div class="n">${m.name}${x.n > 1 ? ` ×${x.n}` : ""}</div><div class="d">${m.desc}</div>
+        <div class="macro">~${m.kcal} kcal · P ${m.prot} · C ${m.carb} · G ${m.fat} a porzione</div>${fatsLine(m) ? `<div class="fats">Grassi aggiunti previsti: <b>${fatsLine(m)}</b></div>` : ""}
+        <div class="recipe">${recipeBox(m)}</div>`;
+      root.appendChild(box);
+    });
+  });
+  if (!root.innerHTML) root.innerHTML = "<p class='hint'>Nessun pasto scelto.</p>";
 }
 function listText(){
   const g = buildList(); let out = `Spesa ${state.days} giorni (${state.phase})\n`; let n = 0;
@@ -856,8 +875,9 @@ function mealsText(){
   const s = selected(), lines = [`Pasti per ${state.days} giorni (${state.phase})`];
   activeCats().forEach(c => { const xs = s.filter(x => x.cat === c.k); if (!xs.length) return; lines.push(`\n${c.name.toUpperCase()}`);
     xs.forEach(x => { const r = recipeOf(x.m); const steps = (r ? r.steps : x.m.steps || "").split(/(?<=\.)\s+/).slice(0, 2).join(" ");
-      lines.push(`• ${x.m.name}${x.n > 1 ? ` ×${x.n}` : ""} — ${x.m.kcal} kcal, ${x.m.prot} g P${fatsLine(x.m) ? " · " + fatsLine(x.m) : ""}`);
-      lines.push(`  ${r ? `Ricetta da ${r.n} porzioni: ` + ingText(r.ing, 1) : ingText(x.m.ing, 1)}`);
+      lines.push(`• ${x.m.name}${x.n > 1 ? ` ×${x.n}` : ""} — ${x.m.kcal} kcal, ${x.m.prot} g P, ${x.m.carb} g C, ${x.m.fat} g G${fatsLine(x.m) ? " · " + fatsLine(x.m) : ""}`);
+      if (r){ const b = Math.max(1, Math.round(x.n / r.n)); lines.push(`  1 ricetta (${r.n} porzioni): ${ingText(r.ing, 1)}`); if (b > 1) lines.push(`  Per ${b} ricette: ${ingText(r.ing, b)}`); }
+      else { lines.push(`  1 porzione: ${ingText(x.m.ing, 1)}`); if (x.n > 1) lines.push(`  ${x.n} porzioni: ${ingText(x.m.ing, x.n)}`); }
       if (steps) lines.push(`  ${steps}`); }); });
   if (state.cal){ lines.push("\nCALENDARIO"); const L = {col:"colazione", pra:"pranzo", spu:"spuntini", cen:"cena"};
     for (let d = 0; d < state.days; d++) lines.push(`Giorno ${d + 1}: ` + ["col","pra","spu","cen"].filter(c => state.cal[c][d].length).map(c => `${L[c]}: ${state.cal[c][d].map(id => byId(id).name).join(" + ")}`).join(" · ")); }
@@ -877,13 +897,14 @@ const LEAD = [null, "Quanti giorni deve coprire questa spesa, in che fase sei e 
   "Scegli i pasti. Ogni + è una porzione; i piatti da teglia si scelgono a ricette intere. Le colazioni oltre i giorni contano come spuntini; gli spuntini non hanno limite.",
   "Media giornaliera dei pasti scelti e cosa sistemare prima di andare a fare la spesa.",
   "I pasti assegnati ai giorni: le preparazioni prima che scadano, la battuta lontana dalla carne rossa.",
-  "Spunta mentre giri. Le quantità coprono esattamente i pasti scelti."];
+  "Spunta mentre giri. Le quantità coprono esattamente i pasti scelti.",
+  "Dosi e procedimento di ogni pasto scelto: per porzione, per tutte le porzioni e per le ricette da teglia."];
 function go(step){
   state.step = step; save();
-  ["s1","s2","s3","s4","s5"].forEach((id, i) => $(id).classList.toggle("hidden", i + 1 !== step));
+  ["s1","s2","s3","s4","s5","s6"].forEach((id, i) => $(id).classList.toggle("hidden", i + 1 !== step));
   [...$("steps").children].forEach((d, i) => d.classList.toggle("on", i + 1 <= step));
   $("lead").textContent = LEAD[step];
-  ({1: renderStep1, 2: renderStep2, 3: renderStep3, 4: renderStep4, 5: renderStep5})[step]();
+  ({1: renderStep1, 2: renderStep2, 3: renderStep3, 4: renderStep4, 5: renderStep5, 6: renderStep6})[step]();
   renderBar(); window.scrollTo(0, 0);
 }
 function renderBar(){
@@ -908,14 +929,18 @@ function renderBarInner(b){
   } else if (state.step === 4){
     b.innerHTML = `<button class="btn ghost">Bilancio</button><button class="btn" id="shuffle">Rimescola</button><span class="grow"></span><button class="btn pri">Lista della spesa</button>`;
     b.querySelector(".ghost").onclick = () => go(3); b.querySelector("#shuffle").onclick = () => { state.calDirty = true; renderStep4(); }; b.querySelector(".pri").onclick = () => go(5);
+  } else if (state.step === 5){
+    b.innerHTML = `<button class="btn ghost">Calendario</button><span class="grow"></span><button class="btn pri">Ricette</button>`;
+    b.querySelector(".ghost").onclick = () => go(4); b.querySelector(".pri").onclick = () => go(6);
   } else {
-    b.innerHTML = `<button class="btn ghost">Calendario</button><span class="grow"></span><button class="btn pri" id="copy">Copia lista</button>`;
-    b.querySelector(".ghost").onclick = () => go(4); b.querySelector("#copy").onclick = () => copy(listText(), "Lista copiata (senza le voci spuntate)");
+    b.innerHTML = `<button class="btn ghost">Spesa</button><span class="grow"></span><button class="btn" id="copymeals">Copia pasti</button><button class="btn pri" id="newshop">Nuova spesa</button>`;
+    b.querySelector(".ghost").onclick = () => go(5); b.querySelector("#copymeals").onclick = () => copy(mealsText(), "Pasti copiati");
+    b.querySelector("#newshop").onclick = () => { if (!confirm("Azzero pasti scelti, calendario e spunte? Giorni, fase e target restano.")) return; Object.assign(state, {sel:{}, open:{}, checked:{}, cal:null, calDirty:true, pick:null}); save(); go(2); };
   }
 }
 let toastT;
 function toast(msg){ const t = $("toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("show"), 2200); }
-go(Math.min(state.step || 1, 5));
+go(Math.min(state.step || 1, 6));
 </script>
 </body>
 </html>
