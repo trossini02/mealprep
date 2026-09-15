@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Piano spesa</title>
+<style>
+  :root{
+    --bg:#FFFFFF; --card:#FFFFFF; --ink:#000000; --muted:#5C5C5C; --line:#E3E3E3; --soft:#F4F4F4;
+    --acc:#6D28D9; --acc-soft:#F1EBFC; --on-acc:#FFFFFF; --bar:rgba(255,255,255,.92); --focus:#C4B5FD;
+    --r:10px;
+  }
+  [data-theme="dark"]{
+    --bg:#000000; --card:#0E0E0E; --ink:#FFFFFF; --muted:#A3A3A3; --line:#2A2A2A; --soft:#151515;
+    --acc:#A78BFA; --acc-soft:#1E1436; --on-acc:#000000; --bar:rgba(0,0,0,.9); --focus:#6D28D9;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--ink);font-family:"Inter","SF Pro Text","Segoe UI",Roboto,system-ui,sans-serif;font-size:16px;line-height:1.4;-webkit-font-smoothing:antialiased}
+  button{font:inherit;color:inherit;cursor:pointer}
+  input[type=number]{font:inherit;padding:10px;border:1.5px solid var(--line);border-radius:8px;width:100%;background:var(--card);color:var(--ink)}
+  .wrap{max-width:760px;margin:0 auto;padding:20px 16px 96px}
+  h1{font-size:30px;font-weight:800;letter-spacing:-.02em;margin:4px 0 4px;line-height:1.05}
+  h2{font-size:21px;font-weight:800;letter-spacing:-.015em;margin:26px 0 8px}
+  h3{font-size:16px;font-weight:700;margin:22px 0 6px}
+  p{margin:6px 0}
+  .lead{color:var(--muted);font-size:15px}
+  .steps{display:flex;gap:5px;margin:16px 0 26px}
+  .steps div{flex:1;height:6px;border-radius:3px;background:var(--line);position:relative}
+  .steps div.on{background:var(--acc)}
+  .steps div span{position:absolute;top:10px;left:0;font-size:11.5px;color:var(--muted);font-weight:600}
+  .steps div.on span{color:var(--acc)}
+
+  .field{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px;margin:12px 0}
+  .field label{font-weight:700;display:block;margin-bottom:10px}
+  .days{display:flex;gap:6px;flex-wrap:wrap}
+  .days button,.seg button{flex:1;min-width:44px;padding:12px 8px;border:1.5px solid var(--line);background:var(--card);border-radius:8px;font-weight:700;font-size:17px}
+  .days button.on,.seg button.on{border-color:var(--acc);background:var(--acc);color:var(--on-acc)}
+  .seg{display:flex;gap:6px}
+  .seg button{text-align:left;padding:12px 14px;font-size:15px;line-height:1.25}
+  .seg button small{display:block;font-weight:500;font-size:13px;opacity:.85;margin-top:3px}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .two small{display:block;color:var(--muted);font-size:12.5px;margin-top:4px}
+  .plan{margin-top:14px;display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+  .plan div{background:var(--acc-soft);border-radius:8px;padding:10px 6px;text-align:center}
+  .plan b{display:block;font-size:22px;font-weight:800;line-height:1;color:var(--acc)}
+  .plan span{font-size:12px;color:var(--muted)}
+
+  .filters{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 10px}
+  .filters button{border:1.5px solid var(--line);background:var(--card);border-radius:99px;padding:6px 12px;font-size:13px;font-weight:600;color:var(--muted)}
+  .filters button.on{border-color:var(--ink);background:var(--ink);color:var(--bg)}
+  .cat{margin-top:22px}
+  .cathead{position:sticky;top:0;z-index:5;background:var(--bg);padding:10px 0 8px;display:flex;align-items:baseline;justify-content:space-between;border-bottom:2px solid var(--ink)}
+  .cathead h2{margin:0}
+  .cathead small{color:var(--muted);font-size:13px;font-weight:500;margin-left:8px}
+  .count{font-weight:800;font-size:18px;color:var(--muted);white-space:nowrap}
+  .count.ok{color:var(--acc)}
+  .count small{font-size:12px;font-weight:600;margin-left:4px}
+  .excess{display:flex;justify-content:space-between;align-items:center;padding:10px 10px;background:var(--acc-soft);border-radius:8px;margin:10px 0 0;font-size:14px}
+  .excess b{font-size:18px;color:var(--acc)}
+  .meal{padding:12px 0;border-bottom:1px solid var(--line)}
+  .meal.sel{background:linear-gradient(90deg,var(--acc-soft),transparent 60%);margin:0 -8px;padding-left:8px;padding-right:8px;border-radius:8px}
+  .meal.off{opacity:.4}
+  .mrow{display:flex;gap:12px;align-items:flex-start}
+  .meal .t{flex:1;min-width:0}
+  .meal .n{font-weight:700;font-size:16px}
+  .meal .d{color:var(--muted);font-size:13.5px;margin-top:2px}
+  .tags{margin-top:6px;display:flex;gap:5px;flex-wrap:wrap}
+  .tag{font-size:11.5px;font-weight:600;padding:2px 7px;border-radius:99px;background:var(--soft);color:var(--muted);border:1px solid var(--line)}
+  .tag.prep,.tag.preworkout,.tag.dolce{background:var(--acc-soft);color:var(--acc);border-color:transparent}
+  .tag.complesso{color:var(--ink);border-color:var(--ink)}
+  .macro{font-size:12.5px;color:var(--muted);margin-top:5px}
+  .macro button{border:0;background:none;color:var(--acc);font-weight:700;padding:0;margin-left:8px;font-size:12.5px;text-decoration:underline}
+  .fats{font-size:12.5px;color:var(--ink);margin-top:3px}
+  .fats b{color:var(--acc)}
+  .stp{display:flex;align-items:center;flex-shrink:0;margin-top:2px}
+  .stp button{width:40px;height:40px;border:1.5px solid var(--line);background:var(--card);font-size:22px;font-weight:600;line-height:1}
+  .stp button:first-child{border-radius:8px 0 0 8px}
+  .stp button:last-child{border-radius:0 8px 8px 0}
+  .stp button:disabled{opacity:.35;cursor:default}
+  .stp b{width:34px;text-align:center;font-size:18px}
+  .stp b.z{color:var(--muted);font-weight:500}
+  .portion{font-size:12.5px;color:var(--acc);font-weight:600;margin-top:4px}
+  .recipe{margin-top:10px;background:var(--card);border:1px solid var(--line);border-left:4px solid var(--acc);border-radius:0 8px 8px 0;padding:10px 12px;font-size:13.5px}
+  .recipe h4{margin:0 0 4px;font-size:13.5px}
+  .recipe ul{margin:4px 0 8px;padding-left:18px}
+  .recipe li{margin:1px 0}
+  .recipe p{margin:4px 0}
+  .base{color:var(--muted);font-size:12.5px}
+
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:8px 0 4px}
+  .stats div{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:10px 6px;text-align:center}
+  .stats b{display:block;font-size:21px;font-weight:800;line-height:1.05}
+  .stats span{font-size:11.5px;color:var(--muted);display:block;margin-top:2px}
+  .stats i{font-style:normal;font-size:11.5px;display:block;margin-top:3px;font-weight:700}
+  .stats i.ok{color:var(--acc)} .stats i.low,.stats i.high{color:var(--ink)}
+  .note{border-left:4px solid var(--muted);background:var(--soft);padding:10px 12px;border-radius:0 8px 8px 0;margin:8px 0;font-size:14px}
+  .note.ok{border-color:var(--acc);background:var(--acc-soft)}
+  .note.bad{border-color:var(--ink);background:var(--soft);font-weight:600}
+  .note.info{border-color:var(--acc);background:var(--card);border-top:1px solid var(--line);border-right:1px solid var(--line);border-bottom:1px solid var(--line)}
+  .slots{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px;margin-top:8px}
+  .slots div{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:13px}
+  .slots div b{display:block;font-size:15px}
+
+  .day{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;margin:10px 0}
+  .day h3{margin:0 0 8px;display:flex;justify-content:space-between;align-items:baseline}
+  .day h3 small{color:var(--muted);font-weight:500;font-size:12.5px}
+  .slot{display:flex;gap:8px;align-items:flex-start;padding:5px 0;border-top:1px solid var(--line)}
+  .slot .l{width:78px;flex-shrink:0;font-size:12px;color:var(--muted);font-weight:600;padding-top:6px}
+  .chips{flex:1;display:flex;flex-wrap:wrap;gap:6px}
+  .chip{border:1.5px solid var(--line);background:var(--card);border-radius:8px;padding:6px 10px;font-size:13.5px;font-weight:600;text-align:left}
+  .chip.pick{border-color:var(--acc);background:var(--acc-soft)}
+  .chip.warn{border-color:var(--ink);border-style:dashed}
+  .chip small{display:block;font-weight:500;color:var(--muted);font-size:11.5px}
+
+  .grp{margin-top:18px}
+  .grp h3{border-bottom:2px solid var(--ink);padding-bottom:4px}
+  .item{display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid var(--line)}
+  .item input{width:26px;height:26px;accent-color:var(--acc);flex-shrink:0;cursor:pointer}
+  .item .n{flex:1;font-weight:600}
+  .item .n small{display:block;font-weight:400;color:var(--muted);font-size:12.5px}
+  .item .q{font-weight:800;color:var(--acc);white-space:nowrap}
+  .item.done .n{text-decoration:line-through;color:var(--muted);font-weight:500}
+  .item.done .q{color:var(--muted)}
+  .prepbox{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;margin-top:10px;font-size:14px}
+  .prepbox h4{margin:10px 0 2px;font-size:14.5px}
+  .prepbox h4:first-child{margin-top:0}
+  .prepbox ul{margin:2px 0 6px;padding-left:18px}
+  .copies{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 4px}
+
+  .bar{position:fixed;left:0;right:0;bottom:0;background:var(--bar);backdrop-filter:blur(8px);border-top:1px solid var(--line);padding:10px 16px calc(10px + env(safe-area-inset-bottom))}
+  .bar .in{max-width:760px;margin:0 auto;display:flex;gap:8px;align-items:center}
+  .btn{padding:13px 16px;border-radius:9px;border:1.5px solid var(--ink);background:var(--card);font-weight:700;font-size:15px;white-space:nowrap}
+  .btn.pri{background:var(--ink);color:var(--bg)}
+  .btn.pri:disabled{background:var(--line);border-color:var(--line);color:var(--muted);cursor:default}
+  .btn.ghost{border-color:var(--line);color:var(--muted);font-weight:600}
+  .btn.sm{padding:9px 12px;font-size:13.5px}
+  .theme{width:38px;height:38px;border-radius:50%;border:1.5px solid var(--line);background:var(--card);font-size:16px;line-height:1;flex-shrink:0;color:var(--acc)}
+  .grow{flex:1}
+  .hint{font-size:13px;color:var(--muted)}
+  .btn:focus-visible,.days button:focus-visible,.seg button:focus-visible,.stp button:focus-visible,.item input:focus-visible,.macro button:focus-visible,.chip:focus-visible,.filters button:focus-visible,.theme:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+  .hidden{display:none}
+  .toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:99px;font-size:14px;font-weight:600;opacity:0;transition:opacity .2s;pointer-events:none;max-width:90vw;text-align:center}
+  .toast.show{opacity:1}
+  @media (max-width:440px){.plan,.stats{grid-template-columns:repeat(2,1fr)} h1{font-size:26px} .bar .hint{display:none} .steps div span{font-size:10px}}
+  @media (prefers-reduced-motion:reduce){.toast{transition:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Piano spesa</h1>
+  <p class="lead" id="lead"></p>
+  <div class="steps" id="steps">
+    <div class="on"><span>Imposta</span></div><div><span>Pasti</span></div><div><span>Bilancio</span></div><div><span>Calendario</span></div><div><span>Spesa</span></div>
+  </div>
+
+  <section id="s1">
+    <div class="field"><label>Giorni di spesa</label><div class="days" id="days"></div></div>
+    <div class="field"><label>Fase</label>
+      <div class="seg" id="phase">
+        <button data-p="cut" class="on">Cut<small>consigliato 1 spuntino al giorno</small></button>
+        <button data-p="bulk">Bulk<small>consigliati 2 spuntini al giorno</small></button>
+      </div>
+      <div class="two" style="margin-top:12px">
+        <div><label for="tk" style="font-size:13.5px;margin-bottom:4px">Target kcal al giorno</label><input type="number" id="tk" min="1500" max="5000" step="50"><small>default: 2.600 cut · 3.400 bulk (basale 2.000, mantenimento ~3.100)</small></div>
+        <div><label for="tp" style="font-size:13.5px;margin-bottom:4px">Target proteine (g)</label><input type="number" id="tp" min="80" max="350" step="5"><small>default: 180 g (2,2 g/kg); in cut anche 200</small></div>
+      </div>
+    </div>
+    <div class="field"><label>Colazione</label>
+      <div class="seg" id="bf">
+        <button data-b="1" class="on">La faccio<small>una al giorno; quelle in più diventano spuntini</small></button>
+        <button data-b="0">La salto<small>digiuno fino a pranzo</small></button>
+      </div>
+    </div>
+    <div class="field"><label>Meal prep il giorno della spesa</label>
+      <div class="seg" id="mp">
+        <button data-m="1" class="on">Sì, ho tempo<small>dolci da teglia, quesadillas, burrito, hummus, uova sode</small></button>
+        <button data-m="0">No<small>solo piatti che si fanno al momento</small></button>
+      </div>
+    </div>
+    <div class="plan" id="plan"></div>
+    <p class="hint" style="margin-top:14px">Pranzo e cena sono uguali nelle due fasi. Gli spuntini sono liberi: il numero consigliato è solo un punto di partenza, il bilancio ti dice se sei dentro le kcal.</p>
+    <p style="margin-top:14px"><button class="btn ghost sm" id="reset">Azzera tutto e ricomincia</button></p>
+  </section>
+
+  <section id="s2" class="hidden">
+    <div class="filters" id="filters"></div>
+    <div id="cats"></div>
+  </section>
+
+  <section id="s3" class="hidden">
+    <div class="stats" id="stats"></div>
+    <div class="slots" id="slots"></div>
+    <h2>Consigli</h2>
+    <div id="advice"></div>
+  </section>
+
+  <section id="s4" class="hidden">
+    <div id="calwarn"></div>
+    <div id="cal"></div>
+    <p class="hint">Tocca un pasto e poi un altro dello stesso tipo per scambiarli di giorno. «Rimescola» rifà l'assegnazione da capo.</p>
+  </section>
+
+  <section id="s5" class="hidden">
+    <h2 style="margin-top:0">Lista della spesa</h2>
+    <p class="hint">Spunta quello che hai già in casa o che hai messo nel carrello: le voci spuntate non finiscono nella copia. «Controlla» = dispensa.</p>
+    <div id="list"></div>
+    <h2>Da preparare il giorno della spesa</h2>
+    <div class="prepbox" id="prep"></div>
+    <div class="copies"><button class="btn sm" id="copyprep">Copia preparazione</button><button class="btn sm" id="copymeals">Copia pasti</button></div>
+  </section>
+</div>
+<div class="bar"><div class="in" id="bar"></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================================ INGREDIENTI
+const ING = {
+  pollo:      {n:"Petto di pollo", c:"carne", u:"g", r:50},
+  bistecca:   {n:"Bistecca di manzo", c:"carne", u:"g", r:50, s:"controfiletto, fesa o scamone"},
+  straccetti: {n:"Straccetti di manzo", c:"carne", u:"g", r:50, s:"fesa o scamone a fettine"},
+  macinato:   {n:"Macinato di manzo 5%", c:"carne", u:"g", r:50},
+  battuta:    {n:"Battuta di fassona", c:"carne", u:"g", r:80, s:"porzioni da 80 g; sottovuoto o in freezer dal 3° giorno"},
+  arrosto:    {n:"Arrosto di pollo o tacchino affettato", c:"carne", u:"g", r:40},
+  salmone:    {n:"Salmone fresco (filetto)", c:"carne", u:"g", r:50},
+  gamberi:    {n:"Gamberi sgusciati surgelati", c:"carne", u:"g", r:150},
+  tonno:      {n:"Tonno al naturale", c:"carne", u:"scatolette", r:1, s:"max 2 volte a settimana (mercurio)"},
+  uova:       {n:"Uova", c:"latt", u:"pz", r:1},
+  latte:      {n:"Latte parzialmente scremato", c:"latt", u:"ml", r:250, s:"solo per cucinare"},
+  bevavena:   {n:"Bevanda d'avena (o mandorla)", c:"latt", u:"ml", r:250},
+  yogurt:     {n:"Yogurt greco 0%", c:"latt", u:"g", r:150, s:"solo dentro le preparazioni"},
+  fiocchi:    {n:"Fiocchi di latte", c:"latt", u:"g", r:150},
+  mozzlight:  {n:"Mozzarella light per cottura", c:"latt", u:"g", r:125},
+  grana:      {n:"Grana o Parmigiano", c:"latt", u:"g", r:50},
+  pecorino:   {n:"Pecorino", c:"latt", u:"g", r:50, s:"oppure grana"},
+  formaggio:  {n:"Formaggio a fette o grattugiato (edamer, cheddar)", c:"latt", u:"g", r:50},
+  cocco:      {n:"Latte di cocco light", c:"latt", u:"ml", r:400},
+  pasta:      {n:"Pasta", c:"cer", u:"g", r:50, s:"integrale se ti va: più fibre, stessi macro"},
+  pastapro:   {n:"Pasta proteica (Barilla Protein+)", c:"cer", u:"g", r:50},
+  ravioli:    {n:"Ravioli freschi", c:"cer", u:"g", r:50},
+  couscous:   {n:"Cous cous", c:"cer", u:"g", r:50},
+  riso:       {n:"Riso basmati", c:"cer", u:"g", r:50},
+  noodles:    {n:"Noodles all'uovo", c:"cer", u:"g", r:50, s:"oppure spaghetti"},
+  avena:      {n:"Fiocchi d'avena", c:"cer", u:"g", r:50},
+  farinaavena:{n:"Farina d'avena", c:"cer", u:"g", r:50, s:"o fiocchi frullati"},
+  pane:       {n:"Pane integrale", c:"cer", u:"g", r:50},
+  burgerbun:  {n:"Pane da burger", c:"cer", u:"pz", r:1},
+  piadine:    {n:"Piadine", c:"cer", u:"pz", r:1},
+  tortilla:   {n:"Tortillas light", c:"cer", u:"pz", r:1, s:"integrali se le trovi"},
+  gallette:   {n:"Gallette di riso o mais", c:"cer", u:"pz", r:1},
+  fettebisc:  {n:"Fette biscottate integrali", c:"cer", u:"g", r:50},
+  farina:     {n:"Farina", c:"cer", u:"g", r:50, p:1},
+  banane:     {n:"Banane", c:"fv", u:"pz", r:1},
+  mele:       {n:"Mele", c:"fv", u:"pz", r:1},
+  limoni:     {n:"Limoni", c:"fv", u:"pz", r:1},
+  lime:       {n:"Lime", c:"fv", u:"pz", r:1},
+  pomodorini: {n:"Pomodorini", c:"fv", u:"g", r:50},
+  pomodoro:   {n:"Pomodori", c:"fv", u:"pz", r:1},
+  insalata:   {n:"Insalata o rucola in busta", c:"fv", u:"buste", r:1},
+  germogli:   {n:"Germogli di soia", c:"fv", u:"buste", r:1},
+  peperoni:   {n:"Peperoni", c:"fv", u:"pz", r:1},
+  cipolle:    {n:"Cipolle", c:"fv", u:"pz", r:1},
+  patate:     {n:"Patate", c:"fv", u:"g", r:100},
+  piselli:    {n:"Piselli surgelati", c:"fv", u:"g", r:100},
+  ceci:       {n:"Ceci in scatola", c:"leg", u:"scatole", r:1, s:"da 400 g"},
+  lenticchie: {n:"Lenticchie in scatola", c:"leg", u:"scatole", r:1, s:"da 400 g"},
+  fagioli:    {n:"Fagioli rossi in scatola", c:"leg", u:"scatole", r:1, s:"da 400 g"},
+  passata:    {n:"Passata di pomodoro", c:"leg", u:"g", r:100},
+  pesto:      {n:"Pesto", c:"leg", u:"g", r:50},
+  chipotle:   {n:"Salsa chipotle", c:"leg", u:"g", r:50, s:"Old El Paso o Tabasco chipotle, reparto etnico; se manca: paprika affumicata, peperoncino e 1 cucchiaio di concentrato"},
+  gocce:      {n:"Gocce di cioccolato fondente", c:"dol", u:"g", r:50},
+  fondente:   {n:"Cioccolato fondente 85%", c:"dol", u:"g", r:50},
+  whey:       {n:"Proteine in polvere (cioccolato)", c:"dol", u:"scoop", r:1, p:1, s:"1 scoop = 30 g"},
+  cremaprot:  {n:"Crema proteica spalmabile", c:"dol", u:"g", r:50, p:1},
+  cremanocc:  {n:"Crema di nocciole senza zucchero", c:"dol", u:"g", r:50, p:1},
+  cacao:      {n:"Cacao amaro", c:"dol", u:"g", r:50, p:1},
+  arachidi:   {n:"Burro d'arachidi 100%", c:"dol", u:"g", r:50, p:1},
+  noci:       {n:"Noci o mandorle", c:"dol", u:"g", r:50, p:1},
+  nocciole:   {n:"Nocciole", c:"dol", u:"g", r:50, p:1},
+  chia:       {n:"Semi di chia", c:"dol", u:"g", r:50, p:1},
+  miele:      {n:"Miele", c:"dol", u:"g", r:50, p:1},
+  sciroppo:   {n:"Sciroppo d'acero zero", c:"dol", u:"ml", r:50, p:1, s:"o dolcificante liquido; in mancanza miele"},
+  dolcif:     {n:"Dolcificante, lievito per dolci, estratto di vaniglia", c:"dol", u:"", r:1, p:1},
+  olio:       {n:"Olio EVO", c:"disp", u:"ml", r:100, p:1},
+  soia:       {n:"Salsa di soia", c:"disp", u:"ml", r:50, p:1},
+  maio:       {n:"Maionese light", c:"disp", u:"g", r:50, p:1},
+  pangrattato:{n:"Pangrattato", c:"disp", u:"g", r:50, p:1},
+  fecola:     {n:"Fecola di patate", c:"disp", u:"g", r:50, p:1},
+  caffe:      {n:"Caffè", c:"disp", u:"", r:1, p:1},
+  spezie:     {n:"Aglio, paprika (anche affumicata), curry, cumino, zenzero, rosmarino, sale, pepe", c:"disp", u:"", r:1, p:1},
+};
+const CAT_LABEL = {carne:"Carne e pesce", latt:"Uova e latticini", cer:"Pasta, pane e cereali", fv:"Frutta e verdura", leg:"Legumi e conserve", dol:"Dolce e proteine", disp:"Dispensa"};
+const CAT_ORDER = ["carne","latt","cer","fv","leg","dol","disp"];
+const ROSSA = ["bistecca","straccetti","macinato","battuta"], PESCE = ["salmone","gamberi","tonno"], LEGUMI = ["ceci","lenticchie","fagioli","piselli"],
+      VEG = ["pomodorini","pomodoro","insalata","germogli","peperoni"], FRUTTA = ["banane","mele"];
+
+// ============================================================ RICETTE DA TEGLIA (una ricetta = n porzioni; si sceglie a ricette intere)
+// keep: giorni in frigo · min: minuti · ing: dosi per una ricetta intera
+const RECIPES = {
+  bbread:    {name:"Banana bread al cioccolato", n:3, unit:"3 fette", keep:5, min:45,
+    ing:[["banane",2],["uova",3],["avena",180],["whey",3],["cacao",10],["gocce",40],["dolcif",0]],
+    steps:"Frulla l'avena in farina. Schiaccia le banane, aggiungi uova, whey, cacao, dolcificante e un cucchiaino di lievito; unisci avena e gocce. Stampo da plumcake, 180 °C per 35 minuti. Taglia in 9 fette: 3 a porzione. In frigo 5 giorni, in freezer 1 mese."},
+  muffin:    {name:"Muffin proteici al cioccolato", n:3, unit:"2 muffin", keep:5, min:35,
+    ing:[["yogurt",300],["farinaavena",150],["cacao",25],["uova",3],["whey",1],["gocce",50],["dolcif",0]],
+    steps:"Mescola yogurt, uova e dolcificante; aggiungi farina d'avena, whey, cacao e un cucchiaino di lievito; per ultime le gocce. 6 pirottini pieni, 180 °C per 22 minuti. 2 muffin a porzione. In frigo 5 giorni."},
+  brownie:   {name:"Brownies proteici", n:2, unit:"2 pezzi", keep:5, min:30,
+    ing:[["uova",2],["yogurt",200],["cacao",40],["sciroppo",40],["whey",2],["dolcif",0]],
+    steps:"Sbatti uova, yogurt e sciroppo; incorpora cacao, whey e un pizzico di lievito. Teglia piccola foderata, 180 °C per 18–20 minuti: dentro deve restare umido. Taglia in 4: 2 pezzi a porzione."},
+  caprese:   {name:"Torta caprese fit", n:3, unit:"2 fette", keep:5, min:40,
+    ing:[["uova",4],["fondente",80],["farinaavena",30],["dolcif",0]],
+    steps:"Sciogli il fondente a bagnomaria. Monta le uova con il dolcificante finché gonfie, unisci il cioccolato tiepido e la farina d'avena con movimenti dal basso. 170 °C per 25 minuti: fuori si crepa, dentro resta umida. 6 fette: 2 a porzione."},
+  cheesecake:{name:"Cheesecake tiramisù", n:2, unit:"3 fette", keep:4, min:45,
+    ing:[["fettebisc",70],["fondente",30],["uova",2],["farinaavena",50],["yogurt",150],["fiocchi",150],["caffe",0],["dolcif",0]],
+    steps:"Base: fette biscottate sbriciolate con il fondente fuso e un goccio di caffè, pressate nello stampo. Crema: frulla fiocchi di latte, yogurt, uova, farina d'avena, dolcificante e un caffè. Sulla base, 170 °C per 30 minuti. Fredda di frigo, cacao sopra. Taglia in 6: 3 fette a porzione."},
+  quesadilla:{name:"Quesadillas di pollo al miele e chipotle", n:4, unit:"2 quesadillas", keep:4, min:50,
+    ing:[["pollo",900],["chipotle",80],["lime",2],["miele",50],["mozzlight",400],["tortilla",8],["fiocchi",240],["maio",50],["latte",40],["spezie",0]],
+    steps:"Pollo a cubetti in padella con sale e pepe; a fine cottura chipotle, 2 cucchiai di miele e succo di lime, finché caramella. Salsa: frulla fiocchi di latte, maionese, 1 cucchiaio di miele, il latte e un po' di lime. Farcisci ogni tortilla con pollo e mozzarella, chiudi a metà, tosta in padella 2 minuti per lato. 2 a porzione con la salsa. In frigo 4 giorni: scalda in padella, non al microonde."},
+  burrito:   {name:"Burrito fit crispy", n:3, unit:"2 burrito", keep:3, min:45,
+    ing:[["tortilla",6],["macinato",400],["formaggio",90],["arrosto",80],["riso",120],["fagioli",1],["pomodoro",2],["cipolle",1],["yogurt",150],["lime",1],["insalata",0.5],["spezie",0]],
+    steps:"Riso bollito. Macinato rosolato con cipolla, paprika e cumino. Arrosto di tacchino a cubetti reso croccante in padella al posto del bacon. Salsa: yogurt greco, lime, paprika. Su ogni tortilla: riso, carne, fagioli, pomodoro, formaggio, salsa, insalata; chiudi a pacchetto e tosta in padella finché croccante. 2 a porzione. In frigo 3 giorni."},
+  balls:     {name:"Energy balls al cacao", n:4, unit:"3 palline", keep:7, min:10,
+    ing:[["avena",100],["arachidi",60],["whey",1],["cacao",20],["miele",20]],
+    steps:"Mescola tutto; se troppo asciutto, un goccio d'acqua. Forma 12 palline, 30 minuti in frigo. 3 a porzione, durano una settimana."},
+  hummus:    {name:"Hummus", n:4, unit:"1 vasetto piccolo", keep:4, min:5,
+    ing:[["ceci",1],["olio",20],["limoni",0.5],["spezie",0]],
+    steps:"Frulla i ceci sgocciolati con olio, limone, aglio, un pizzico di cumino e acqua fino alla consistenza che vuoi. 4 porzioni, in frigo 4 giorni."},
+};
+
+// ============================================================ PASTI
+// cats: dove compare · tags: zero/facile/medio/complesso/prep/dolce/salato/preworkout · macro per porzione
+// ing: dosi per una porzione; ["@ricetta", 1] = una porzione di una ricetta da teglia (si sceglie a ricette intere)
+// batchOK: si può cucinare per più porzioni insieme · pair: le 2 porzioni vanno mangiate lo stesso giorno · keep: giorni in frigo · fresh: da mangiare entro N giorni
+const MEALS = [
+  // ---------- colazioni (e spuntini: stesse dosi)
+  {id:"pancake", name:"Pancake al cioccolato", cats:["col"], tags:["facile","dolce","preworkout"], pair:1,
+   desc:"Uova, latte, farina, whey e gocce di fondente frullati e cotti in padella. Una padellata sono 2 porzioni: una a colazione e una come spuntino nello stesso giorno (la seconda finisce nell'eccesso colazioni).",
+   kcal:520, prot:27, carb:60, fat:19, ing:[["uova",1],["latte",50],["farina",50],["whey",0.5],["gocce",35]],
+   steps:"Per 2 porzioni: 2 uova, 100 ml latte, 100 g farina, 1 scoop whey, 70 g gocce (30 g in cut). Frulla tutto tranne le gocce, aggiungile alla fine. Padella antiaderente calda, un mestolo per pancake, gira quando fa le bolle."},
+  {id:"porridge", name:"Porridge al cacao", cats:["col"], tags:["facile","dolce"],
+   desc:"Avena cotta nel latte, whey e cacao mescolati fuori dal fuoco, banana e gocce di fondente sopra.",
+   kcal:720, prot:46, carb:100, fat:16, ing:[["avena",80],["latte",250],["whey",1],["cacao",10],["banane",1],["gocce",10]],
+   steps:"Avena e latte in pentolino, 4–5 minuti mescolando. Fuori dal fuoco aggiungi whey e cacao. Banana a fette e gocce sopra."},
+  {id:"overnight", name:"Overnight porridge", cats:["col"], tags:["zero","dolce"], batchOK:1, keep:3,
+   desc:"Yogurt greco, bevanda d'avena, semi di chia, avena e cacao in un barattolo la sera; la mattina è un budino freddo, con la crema di nocciole sopra.",
+   kcal:545, prot:29, carb:68, fat:16, ing:[["yogurt",150],["bevavena",150],["chia",10],["avena",60],["cacao",10],["cremanocc",15],["dolcif",0]],
+   steps:"In un barattolo: yogurt, bevanda d'avena, chia, avena, cacao, dolcificante, un pizzico di sale e qualche goccia di vaniglia. Mescola, frigo tutta la notte (regge 3 giorni). La mattina la crema di nocciole sopra. Con 1 scoop di whey arrivi a 55 g di proteine."},
+  {id:"croccante", name:"Porridge croccante al cacao", cats:["col"], tags:["medio","dolce"],
+   desc:"Uno strato di avena, chia e cacao cotto fino a diventare croccante, coperto da una crema di yogurt greco al cacao, con nocciole e fondente a scaglie.",
+   kcal:535, prot:30, carb:48, fat:24, ing:[["avena",40],["chia",8],["cacao",15],["latte",60],["yogurt",150],["nocciole",15],["fondente",15],["dolcif",0]],
+   steps:"Impasta avena, chia, 10 g di cacao, dolcificante e il latte; stendi sottile in padella o in forno a 180 °C per 12 minuti finché croccante. Farcia: yogurt con 5 g di cacao e dolcificante. Sopra nocciole tritate e fondente a scaglie."},
+  {id:"toast", name:"Toast dolce", cats:["col"], tags:["facile","dolce"],
+   desc:"Due fette di pane integrale tostato con burro d'arachidi, banana a rondelle e fondente grattugiato. Pochissime proteine: da abbinare a uno spuntino proteico nella giornata.",
+   kcal:570, prot:18, carb:75, fat:24, ing:[["pane",80],["arachidi",30],["banane",1],["fondente",15]],
+   steps:"Tosta il pane. Burro d'arachidi, banana a rondelle, fondente grattugiato sopra."},
+  {id:"bbread", name:"Banana bread al cioccolato", cats:["col"], tags:["prep","dolce","preworkout"],
+   desc:"Plumcake di banane, uova, avena frullata, whey, cacao e gocce, senza zucchero. Una teglia = 9 fette = 3 porzioni da 3 fette.",
+   kcal:565, prot:40, carb:66, fat:14, ing:[["@bbread",1]]},
+  {id:"muffin", name:"Muffin proteici al cioccolato", cats:["col"], tags:["prep","dolce","preworkout"],
+   desc:"Muffin di yogurt greco, farina d'avena, uova, cacao, whey e gocce. Una teglia = 6 muffin = 3 porzioni da 2.",
+   kcal:475, prot:34, carb:44, fat:14, ing:[["@muffin",1]]},
+  {id:"brownie", name:"Brownies proteici", cats:["spu"], tags:["prep","dolce"],
+   desc:"Quadrotti di uova, yogurt greco, cacao, sciroppo d'acero zero e whey: umidi, quasi solo proteine. Una teglia = 4 pezzi = 2 porzioni.",
+   kcal:310, prot:44, carb:15, fat:9, ing:[["@brownie",1]]},
+  {id:"caprese", name:"Torta caprese fit", cats:["spu"], tags:["prep","dolce"],
+   desc:"Torta di uova montate, fondente fuso e un po' di farina d'avena: la più cioccolatosa, e la più grassa. Una torta = 6 fette = 3 porzioni da 2.",
+   kcal:287, prot:12, carb:16, fat:19, ing:[["@caprese",1]]},
+  {id:"cheese", name:"Cheesecake tiramisù", cats:["col"], tags:["prep","dolce"],
+   desc:"Base di fette biscottate e fondente, crema di fiocchi di latte, yogurt greco e caffè, cacao sopra. Una cheesecake = 6 fette = 2 porzioni da 3.",
+   kcal:512, prot:30, carb:50, fat:18, ing:[["@cheesecake",1]]},
+  {id:"tortino", name:"Tortino proteico con salsa", cats:["spu"], tags:["facile","dolce"],
+   desc:"Yogurt greco, uovo, fecola e whey cotti 3 minuti al microonde; sopra una salsa di crema proteica sciolta nella bevanda d'avena.",
+   kcal:355, prot:34, carb:22, fat:12, ing:[["yogurt",150],["uova",1],["fecola",10],["whey",0.33],["cremaprot",20],["bevavena",30]],
+   steps:"Mescola yogurt, uovo, fecola, 10 g di whey e dolcificante. Tazza o stampino, microonde 3 minuti (o forno 180 °C per 15). Salsa: crema proteica sciolta con la bevanda d'avena, versata sopra."},
+  {id:"uova_pane", name:"Uova strapazzate, pane e frutta", cats:["col"], tags:["facile","salato"],
+   desc:"Tre uova strapazzate cremose, due fette di pane integrale, una mela e un quadretto di fondente a chiudere.",
+   kcal:605, prot:28, carb:62, fat:27, ing:[["uova",3],["pane",80],["mele",1],["fondente",10],["olio",5]],
+   steps:"Uova sbattute con sale e pepe, in padella a fuoco basso mescolando finché cremose. Pane tostato, mela a parte."},
+
+  // ---------- pranzi
+  {id:"p_salmone", name:"Pasta al salmone", cats:["pra"], tags:["facile","salato"], fresh:2,
+   desc:"Pasta saltata con salmone fresco a cubetti, pomodorini, scorza di limone e rucola a crudo.",
+   kcal:820, prot:46, carb:90, fat:32, ing:[["pasta",120],["salmone",150],["pomodorini",150],["limoni",0.5],["insalata",0.5],["olio",10]],
+   steps:"Pasta in cottura. Salmone a cubetti in padella con olio 3 minuti, pomodorini tagliati altri 3, scorza e succo di limone. Salta la pasta, rucola a crudo."},
+  {id:"p_gamberi", name:"Pasta ai gamberi", cats:["pra"], tags:["facile","salato"],
+   desc:"Pasta con gamberi saltati in aglio e olio, pomodorini, prezzemolo e limone.",
+   kcal:650, prot:38, carb:90, fat:13, ing:[["pasta",120],["gamberi",150],["pomodorini",150],["limoni",0.5],["olio",10],["spezie",0]],
+   steps:"Aglio in olio, pomodorini 4 minuti, gamberi scongelati 3 minuti. Pasta saltata dentro con un mestolo d'acqua di cottura, limone e prezzemolo."},
+  {id:"p_couscous", name:"Pollo e cous cous", cats:["pra"], tags:["facile","salato"], batchOK:1, keep:3,
+   desc:"Cous cous sgranato con straccetti di pollo alla paprika, ceci, pomodorini e limone. Buono anche freddo.",
+   kcal:780, prot:66, carb:88, fat:17, ing:[["couscous",90],["pollo",200],["ceci",0.4],["pomodorini",150],["limoni",0.5],["olio",10],["spezie",0]],
+   steps:"Cous cous coperto d'acqua bollente e olio, 5 minuti, sgrana con la forchetta. Pollo a straccetti con paprika in padella 6 minuti. Ceci sgocciolati e pomodorini a crudo, limone. Regge 3 giorni in frigo."},
+  {id:"p_carbonara", name:"Carbonara fit", cats:["pra"], tags:["facile","salato"],
+   desc:"Carbonara con arrosto di tacchino a cubetti reso croccante al posto del guanciale, due uova e un tuorlo, pecorino e pepe.",
+   kcal:830, prot:55, carb:88, fat:25, ing:[["pasta",120],["arrosto",80],["uova",3],["pecorino",30],["spezie",0]],
+   steps:"Tacchino a cubetti croccante in padella senza olio. 2 uova + 1 tuorlo sbattuti con pecorino e pepe. Pasta scolata nella padella spenta, poi le uova, mescolando con un po' d'acqua di cottura finché cremosa."},
+  {id:"p_ravioli", name:"Ravioli al pomodoro", cats:["pra"], tags:["facile","salato"],
+   desc:"Ravioli freschi saltati nella passata con grana; a lato arrosto di pollo e insalata con pomodorini per arrivare alle proteine.",
+   kcal:780, prot:47, carb:76, fat:28, ing:[["ravioli",200],["passata",150],["grana",20],["arrosto",80],["insalata",0.5],["pomodorini",100]],
+   steps:"Passata scaldata con un filo d'olio. Ravioli 3–4 minuti, saltati nel sugo, grana. Insalata, pomodorini e l'arrosto a parte."},
+  {id:"p_pesto", name:"Pasta proteica al pesto e pollo", cats:["pra"], tags:["facile","salato"],
+   desc:"Barilla Protein+ condita a crudo con pesto, pollo grigliato a striscioline e pomodorini.",
+   kcal:680, prot:58, carb:65, fat:21, ing:[["pastapro",100],["pollo",150],["pesto",30],["pomodorini",100]],
+   steps:"Pollo battuto sottile, grigliato 3 minuti per lato, a striscioline. Pasta scolata, pesto a crudo con un cucchiaio d'acqua di cottura, pomodorini a metà."},
+  {id:"p_ragu", name:"Pasta al ragù", cats:["pra"], tags:["medio","salato"], batchOK:1, keep:4,
+   desc:"Ragù di macinato 5% con cipolla e passata, cotto mezz'ora; il sugo regge 4 giorni, la pasta si fa al momento.",
+   kcal:830, prot:55, carb:95, fat:22, ing:[["pasta",120],["macinato",150],["passata",150],["cipolle",0.5],["grana",20],["olio",10]],
+   steps:"Cipolla in olio, macinato rosolato bene, passata e sale, 25 minuti a fuoco basso. Fai il ragù per tutte le porzioni insieme e cuoci solo la pasta al momento."},
+  {id:"p_tonno", name:"Pasta al tonno e pomodorini", cats:["pra"], tags:["facile","salato"],
+   desc:"Pasta con tonno in scatola, pomodorini saltati con aglio e pepe. Dodici minuti in tutto.",
+   kcal:700, prot:56, carb:90, fat:12, ing:[["pasta",120],["tonno",2],["pomodorini",150],["olio",10],["spezie",0]],
+   steps:"Aglio in olio, pomodorini 5 minuti, tonno sgocciolato 1 minuto. Pasta saltata dentro, pepe."},
+  {id:"p_piadina", name:"Piadine con pollo grigliato", cats:["pra"], tags:["facile","salato"],
+   desc:"Due piadine farcite con pollo grigliato, rucola, grana a scaglie e pomodoro. Si porta fuori casa.",
+   kcal:760, prot:55, carb:74, fat:25, ing:[["piadine",2],["pollo",150],["insalata",0.5],["grana",20],["pomodoro",1]],
+   steps:"Pollo grigliato a fette, piadine scaldate 30 secondi per lato, farcite con rucola, grana a scaglie, pomodoro e pollo."},
+  {id:"p_lenticchie", name:"Insalata di lenticchie e tonno", cats:["pra"], tags:["zero","salato"],
+   desc:"Lenticchie in scatola con tonno, pomodorini, cipolla a fettine, olio e limone; pane a parte. Nessuna cottura.",
+   kcal:665, prot:48, carb:85, fat:15, ing:[["lenticchie",1],["tonno",1],["pomodorini",150],["cipolle",0.25],["limoni",0.5],["pane",80],["olio",10]],
+   steps:"Lenticchie sgocciolate e sciacquate, tonno, pomodorini a metà, cipolla sottile, olio, limone, sale. Pane a parte."},
+  {id:"p_risosaltato", name:"Riso saltato pollo e uovo", cats:["pra"], tags:["medio","salato"],
+   desc:"Riso basmati saltato a fuoco alto con pollo a cubetti, due uova strapazzate, piselli e salsa di soia.",
+   kcal:830, prot:60, carb:92, fat:23, ing:[["riso",100],["pollo",150],["uova",2],["piselli",80],["soia",20],["olio",10]],
+   steps:"Riso bollito e raffreddato (meglio del giorno prima). Pollo a cubetti in padella, piselli, poi le uova strapazzate a lato; riso e soia, salta 2 minuti a fuoco alto."},
+  {id:"quesadilla", name:"Quesadillas di pollo al miele e chipotle", cats:["pra","cen"], tags:["prep","medio","salato"],
+   desc:"Tortillas farcite con pollo caramellato al miele, chipotle e lime e mozzarella light, tostate in padella; salsa fredda ai fiocchi di latte. Una preparazione = 8 quesadillas = 4 porzioni da 2.",
+   kcal:840, prot:86, carb:60, fat:24, ing:[["@quesadilla",1]]},
+  {id:"burrito", name:"Burrito fit crispy", cats:["pra","cen"], tags:["prep","medio","salato"],
+   desc:"Burrito di macinato speziato, riso, fagioli rossi, formaggio, tacchino croccante e salsa allo yogurt, tostati in padella. Una preparazione = 6 burrito = 3 porzioni da 2.",
+   kcal:830, prot:63, carb:92, fat:22, ing:[["@burrito",1]]},
+
+  // ---------- cene
+  {id:"c_impanato", name:"Pollo impanato con germogli di soia", cats:["cen"], tags:["medio","salato"],
+   desc:"Fettine di pollo impanate in uovo e pangrattato, cotte in padella; germogli di soia saltati con salsa di soia e patate al forno.",
+   kcal:900, prot:67, carb:90, fat:28, ing:[["pollo",200],["uova",1],["pangrattato",40],["germogli",1],["soia",20],["patate",300],["olio",20]],
+   steps:"Pollo battuto, passato nell'uovo e nel pangrattato, in padella con olio 4 minuti per lato. Germogli saltati 2 minuti con soia. Patate a spicchi al forno 200 °C 40 minuti (o dal meal prep)."},
+  {id:"c_bistecca", name:"Bistecca e uova", cats:["cen"], tags:["facile","salato"],
+   desc:"Bistecca di manzo in padella rovente, due uova al tegamino, patate al forno e insalata.",
+   kcal:880, prot:79, carb:56, fat:38, ing:[["bistecca",250],["uova",2],["patate",300],["insalata",0.5],["olio",10]],
+   steps:"Bistecca a temperatura ambiente, padella rovente, 2–3 minuti per lato, riposo 3 minuti. Uova nella stessa padella. Patate dal forno, insalata."},
+  {id:"c_burger", name:"Burger con patate", cats:["cen"], tags:["facile","salato"],
+   desc:"Hamburger di macinato 5% con formaggio fuso nel pane da burger, insalata e pomodoro; patate al forno a lato.",
+   kcal:790, prot:58, carb:75, fat:25, ing:[["macinato",200],["formaggio",20],["burgerbun",1],["insalata",0.25],["pomodoro",1],["patate",200],["olio",10]],
+   steps:"Macinato compattato con sale e pepe, in padella 4 minuti per lato, formaggio sopra a fuoco spento. Pane tostato, insalata, pomodoro."},
+  {id:"c_teriyaki", name:"Pollo teriyaki con noodles", cats:["cen"], tags:["medio","salato"], batchOK:1, keep:3,
+   desc:"Strisce di pollo marinate in soia, miele, aglio e zenzero, saltate con peperone e germogli; noodles all'uovo.",
+   kcal:760, prot:60, carb:85, fat:14, ing:[["pollo",200],["noodles",100],["peperoni",1],["germogli",0.5],["soia",30],["miele",10],["spezie",0],["olio",10]],
+   steps:"Pollo a strisce nella marinata almeno 30 minuti (meglio dal giorno della spesa). Peperone a strisce in padella 4 minuti, pollo con la marinata 6 minuti finché lucido, germogli 1 minuto. Noodles bolliti e saltati dentro."},
+  {id:"c_curry", name:"Pollo al curry con riso", cats:["cen"], tags:["medio","salato"], batchOK:1, keep:4,
+   desc:"Pollo a cubetti in salsa di curry con cipolla, peperone e latte di cocco light; riso basmati e piselli.",
+   kcal:875, prot:62, carb:98, fat:22, ing:[["pollo",200],["cocco",150],["peperoni",1],["cipolle",0.5],["riso",100],["piselli",80],["spezie",0],["olio",10]],
+   steps:"Cipolla e peperone in olio 4 minuti, pollo a cubetti 5 minuti, curry, latte di cocco, 10 minuti a fuoco basso. Riso bollito, piselli negli ultimi 3 minuti. Il curry migliora il giorno dopo."},
+  {id:"c_salmone", name:"Salmone al forno con patate", cats:["cen"], tags:["facile","salato"], fresh:2,
+   desc:"Filetto di salmone, patate a spicchi e pomodorini in un'unica teglia con olio, limone e rosmarino.",
+   kcal:755, prot:47, carb:58, fat:37, ing:[["salmone",200],["patate",300],["pomodorini",150],["limoni",0.5],["olio",10]],
+   steps:"Patate a spicchi in teglia 25 minuti a 200 °C; aggiungi salmone e pomodorini con olio, limone e rosmarino, altri 15 minuti."},
+  {id:"c_gamberi", name:"Gamberi, uovo e noodles", cats:["cen"], tags:["facile","salato"],
+   desc:"Gamberi saltati con aglio, peperone e germogli, un uovo strapazzato in padella, noodles, soia e limone.",
+   kcal:670, prot:43, carb:78, fat:16, ing:[["gamberi",150],["uova",1],["noodles",100],["peperoni",1],["germogli",0.5],["soia",20],["limoni",0.5],["olio",10]],
+   steps:"Aglio e peperone in padella 3 minuti, gamberi 3 minuti, sposta a lato e strapazza l'uovo, germogli, noodles bolliti, soia e limone, 1 minuto a fuoco alto."},
+  {id:"c_polpette", name:"Polpette al sugo con pasta", cats:["cen"], tags:["medio","salato"], batchOK:1, keep:4,
+   desc:"Polpette di macinato, uovo, pangrattato e grana cotte nella passata; pasta e piselli.",
+   kcal:1000, prot:75, carb:85, fat:32, ing:[["macinato",200],["uova",1],["pangrattato",30],["grana",20],["passata",200],["pasta",80],["piselli",80],["olio",10]],
+   steps:"Macinato, uovo, pangrattato, grana, sale: 6 polpette. Rosola in padella, aggiungi la passata, 20 minuti coperte. Pasta e piselli bolliti insieme negli ultimi minuti. Le polpette reggono 4 giorni in frigo."},
+  {id:"c_straccetti", name:"Straccetti di manzo, rucola e grana", cats:["cen"], tags:["facile","salato"],
+   desc:"Straccetti di manzo saltati tre minuti, su rucola con grana a scaglie e aceto balsamico; pane a parte.",
+   kcal:790, prot:75, carb:50, fat:34, ing:[["straccetti",250],["insalata",0.5],["grana",30],["pane",100],["olio",10]],
+   steps:"Padella rovente con olio, straccetti 2–3 minuti in tutto, sale alla fine. Sul piatto rucola, carne, grana a scaglie, balsamico. Pane."},
+  {id:"c_limone", name:"Pollo al limone con patate", cats:["cen"], tags:["facile","salato"],
+   desc:"Fettine di pollo con salsa al limone e rosmarino, patate al forno, pomodorini e una fetta di pane.",
+   kcal:815, prot:61, carb:98, fat:19, ing:[["pollo",200],["limoni",1],["patate",300],["pomodorini",100],["pane",50],["spezie",0],["olio",15]],
+   steps:"Pollo a fette sottili in padella con olio e rosmarino 3 minuti per lato, succo di limone e un goccio d'acqua per la salsa. Patate dal forno, pomodorini."},
+  {id:"c_chili", name:"Chili con carne e pane", cats:["cen"], tags:["medio","salato"], batchOK:1, keep:4,
+   desc:"Macinato con fagioli rossi, passata, peperone, cipolla, cumino e paprika; pane per fare la scarpetta. Si congela.",
+   kcal:900, prot:70, carb:90, fat:25, ing:[["macinato",200],["fagioli",1],["passata",200],["peperoni",1],["cipolle",0.5],["pane",80],["spezie",0],["olio",10]],
+   steps:"Cipolla e peperone in olio, macinato rosolato, spezie, passata e fagioli sgocciolati, 25 minuti a fuoco basso. Regge 4 giorni in frigo."},
+  {id:"c_frittata", name:"Frittata di patate e piselli", cats:["cen"], tags:["facile","salato"],
+   desc:"Frittata di quattro uova con patate a dadini, piselli e grana; insalata a lato. Cena senza carne.",
+   kcal:755, prot:42, carb:49, fat:43, ing:[["uova",4],["patate",200],["piselli",100],["grana",20],["insalata",0.5],["olio",15]],
+   steps:"Patate a dadini in padella con olio 10 minuti, piselli 3 minuti. Uova sbattute con grana, sale e pepe, versate sopra, coperchio a fuoco basso 8 minuti, gira e altri 3."},
+
+  // ---------- spuntini
+  {id:"s_battuta", name:"Battuta di fassona 80 g", cats:["spu"], tags:["zero","salato"], fresh:2,
+   desc:"Carne cruda condita al momento con olio, limone, sale e pepe. Massimo 3 a settimana, non nei giorni con bistecca, burger, ragù o chili; dal terzo giorno va congelata.",
+   kcal:145, prot:17, carb:0, fat:8, ing:[["battuta",80],["limoni",0.25],["olio",5]],
+   steps:"Condisci al momento: olio, qualche goccia di limone, sale grosso, pepe. In bulk aggiungi 2 fette di pane o 3 gallette."},
+  {id:"s_banana", name:"Banana e gallette con burro d'arachidi", cats:["spu"], tags:["zero","dolce","preworkout"],
+   desc:"Una banana e due gallette spalmate di burro d'arachidi: carboidrati veloci e poco grasso, da un'ora prima dell'allenamento.",
+   kcal:265, prot:6, carb:46, fat:8, ing:[["banane",1],["gallette",2],["arachidi",15]],
+   steps:"Burro d'arachidi sulle gallette, banana a parte o a rondelle sopra."},
+  {id:"s_balls", name:"Energy balls al cacao", cats:["spu"], tags:["prep","dolce","preworkout"],
+   desc:"Palline di avena, burro d'arachidi, whey, cacao e miele, fredde di frigo. Una preparazione = 12 palline = 4 porzioni da 3.",
+   kcal:245, prot:14, carb:24, fat:10, ing:[["@balls",1]]},
+  {id:"s_arrosto", name:"Pane e arrosto di pollo", cats:["spu"], tags:["zero","salato","preworkout"],
+   desc:"Panino con due fette di pane integrale, 80 g di arrosto di pollo o tacchino e pomodorini.",
+   kcal:300, prot:25, carb:40, fat:4, ing:[["pane",80],["arrosto",80],["pomodorini",80]],
+   steps:"Panino e via. Un filo d'olio se vuoi."},
+  {id:"s_piadina", name:"Piadina con arrosto e grana", cats:["spu"], tags:["zero","salato"],
+   desc:"Una piadina scaldata con 80 g di arrosto di tacchino, grana a scaglie e rucola. Lo spuntino salato da sera.",
+   kcal:400, prot:28, carb:36, fat:14, ing:[["piadine",1],["arrosto",80],["grana",15],["insalata",0.25]],
+   steps:"Piadina scaldata 30 secondi per lato, farcita e chiusa."},
+  {id:"s_sode", name:"Uova sode e gallette", cats:["spu"], tags:["prep","salato"], keep:5,
+   desc:"Due uova sode fatte il giorno della spesa e due gallette. Proteine pronte in frigo.",
+   kcal:220, prot:14, carb:17, fat:10, ing:[["uova",2],["gallette",2]],
+   steps:"Uova in acqua bollente 9 minuti, poi in acqua fredda. Sbucciate in frigo durano 5 giorni."},
+  {id:"s_fondente", name:"Fondente e frutta secca", cats:["spu"], tags:["zero","dolce"],
+   desc:"Venti grammi di fondente 85% e una manciata di noci o mandorle. Grassi buoni, quasi zero carboidrati: da pre-nanna.",
+   kcal:280, prot:6, carb:9, fat:25, ing:[["fondente",20],["noci",25]]},
+  {id:"s_shake", name:"Shake al cioccolato", cats:["spu"], tags:["zero","dolce","preworkout"],
+   desc:"Latte, whey al cioccolato e banana frullati con ghiaccio. L'unico caso in cui il latte si beve.",
+   kcal:335, prot:33, carb:40, fat:5, ing:[["latte",250],["whey",1],["banane",1]],
+   steps:"Frulla o shakera 30 secondi. Con ghiaccio è meglio."},
+  {id:"s_mela", name:"Mela e mandorle", cats:["spu"], tags:["zero","dolce"],
+   desc:"Una mela e trenta grammi di mandorle. Sta in borsa.",
+   kcal:255, prot:6, carb:26, fat:15, ing:[["mele",1],["noci",30]]},
+  {id:"s_hummus", name:"Hummus e gallette", cats:["spu"], tags:["prep","salato"],
+   desc:"Crema di ceci fatta il giorno della spesa, con quattro gallette. Una preparazione = 4 porzioni.",
+   kcal:260, prot:7, carb:40, fat:7, ing:[["@hummus",1],["gallette",4]]},
+  {id:"s_toast", name:"Toast burro d'arachidi e banana", cats:["spu"], tags:["zero","dolce","preworkout"],
+   desc:"Una fetta di pane integrale con burro d'arachidi, mezza banana e un quadretto di fondente.",
+   kcal:270, prot:9, carb:37, fat:10, ing:[["pane",40],["arachidi",15],["banane",0.5],["fondente",5]]},
+];
+
+const CATS = [{k:"col", name:"Colazioni"}, {k:"pra", name:"Pranzi"}, {k:"cen", name:"Cene"}, {k:"spu", name:"Spuntini"}];
+const TAG_LABEL = {zero:"zero preparazione", facile:"facile", medio:"medio", complesso:"complesso", prep:"meal prep", dolce:"dolce", salato:"salato", preworkout:"ideale prima di allenamento"};
+const FILTERS = [["all","Tutti"],["zero","Zero preparazione"],["facile","Facile"],["prep","Meal prep"],["dolce","Dolce"],["salato","Salato"],["preworkout","Pre-workout"]];
+const DEF = {kcal:{cut:2600, bulk:3400}, prot:180};   // basale ~2.000 × attività 1,55 ≈ 3.100 di mantenimento; cut −500, bulk +300
+
+// ============================================================ STATO
+const STORE = "pianoSpesa.v3";
+const state = {step:1, days:4, phase:"cut", breakfast:1, prep:1, tk:null, tp:null, filter:"all", dark:0, sel:{}, open:{}, checked:{}, cal:null, calDirty:true, pick:null};
+try { const s = JSON.parse(localStorage.getItem(STORE)); if (s && s.days) Object.assign(state, s, {open:{}, pick:null}); } catch (e) {}
+function save(){ try { localStorage.setItem(STORE, JSON.stringify(state)); } catch (e) {} }
+function applyTheme(){ document.documentElement.dataset.theme = state.dark ? "dark" : "light"; }
+applyTheme();
+
+const $ = id => document.getElementById(id);
+const key = (cat, id) => cat + "|" + id;
+const sel = (cat, id) => state.sel[key(cat, id)] || 0;
+const recipeOf = m => { const r = m.ing.find(i => i[0][0] === "@"); return r ? RECIPES[r[0].slice(1)] : null; };
+const stepOf = m => { const r = recipeOf(m); return r ? r.n : 1; };
+const tkcal = () => state.tk || DEF.kcal[state.phase];
+const tprot = () => state.tp || DEF.prot;
+
+const needCol = () => state.days * state.breakfast;
+const needSpu = () => state.days * (state.phase === "bulk" ? 2 : 1);
+const have = k => MEALS.filter(m => m.cats.includes(k)).reduce((a, m) => a + sel(k, m.id), 0);
+const excess = () => Math.max(0, have("col") - needCol());          // colazioni in più = spuntini
+const capCol = () => needCol() + needSpu();                           // limite della categoria colazioni
+const need = k => k === "col" ? needCol() : k === "spu" ? needSpu() : state.days;
+const activeCats = () => CATS;
+const doneCat = k => k === "col" ? have("col") >= needCol() : k === "spu" ? true : have(k) === need(k);
+const allDone = () => activeCats().every(c => doneCat(c.k));
+const totalOf = m => m.cats.reduce((a, c) => a + sel(c, m.id), 0);
+const blocked = m => !state.prep && m.tags.includes("prep");
+
+function portionIng(m){
+  const out = {};
+  m.ing.forEach(([k, q]) => {
+    if (k[0] === "@"){ const r = RECIPES[k.slice(1)]; r.ing.forEach(([ik, iq]) => out[ik] = (out[ik] || 0) + iq * q / r.n); }
+    else out[k] = (out[k] || 0) + q;
+  });
+  return out;
+}
+const hasAny = (m, keys) => Object.keys(portionIng(m)).some(k => keys.includes(k));
+function fatsLine(m){
+  const pi = portionIng(m), parts = [];
+  const spoon = ml => ml >= 10 ? ` (${Math.round(ml / 10 * 2) / 2} cucchiai)`.replace("(1 cucchiai)", "(1 cucchiaio)") : ml >= 5 ? " (1 cucchiaino)" : "";
+  if (pi.olio) parts.push(`olio EVO ${Math.round(pi.olio)} ml${spoon(pi.olio)}`);
+  if (pi.arachidi) parts.push(`burro d'arachidi ${Math.round(pi.arachidi)} g`);
+  if (pi.cremanocc) parts.push(`crema di nocciole ${Math.round(pi.cremanocc)} g`);
+  if (pi.cremaprot) parts.push(`crema proteica ${Math.round(pi.cremaprot)} g`);
+  if (pi.maio) parts.push(`maionese light ${Math.round(pi.maio)} g`);
+  return parts.join(" · ");
+}
+function touch(){ state.calDirty = true; state.pick = null; save(); }
+
+// ============================================================ STEP 1
+function renderStep1(){
+  const d = $("days"); d.innerHTML = "";
+  for (let i = 1; i <= 7; i++){ const b = document.createElement("button"); b.textContent = i; b.className = i === state.days ? "on" : "";
+    b.onclick = () => { state.days = i; touch(); renderStep1(); renderBar(); }; d.appendChild(b); }
+  [...$("phase").children].forEach(b => b.classList.toggle("on", b.dataset.p === state.phase));
+  [...$("bf").children].forEach(b => b.classList.toggle("on", +b.dataset.b === state.breakfast));
+  [...$("mp").children].forEach(b => b.classList.toggle("on", +b.dataset.m === state.prep));
+  $("tk").value = tkcal(); $("tp").value = tprot();
+  $("plan").innerHTML = CATS.map(c => `<div><b>${need(c.k)}</b><span>${c.name.toLowerCase()}${c.k === "spu" ? " consigliati" : ""}</span></div>`).join("");
+}
+$("phase").onclick = e => { const b = e.target.closest("button"); if (!b) return; state.phase = b.dataset.p; touch(); renderStep1(); renderBar(); };
+$("bf").onclick = e => { const b = e.target.closest("button"); if (!b) return; state.breakfast = +b.dataset.b; touch(); renderStep1(); renderBar(); };
+$("mp").onclick = e => { const b = e.target.closest("button"); if (!b) return; state.prep = +b.dataset.m;
+  if (!state.prep) Object.keys(state.sel).forEach(k => { const m = MEALS.find(x => x.id === k.split("|")[1]); if (m && m.tags.includes("prep")) delete state.sel[k]; });
+  touch(); renderStep1(); renderBar(); };
+$("tk").onchange = e => { const v = +e.target.value; state.tk = v && v !== DEF.kcal[state.phase] ? v : null; save(); };
+$("tp").onchange = e => { const v = +e.target.value; state.tp = v && v !== DEF.prot ? v : null; save(); };
+$("reset").onclick = () => { if (!confirm("Azzero giorni, pasti scelti, calendario e spunte?")) return;
+  Object.assign(state, {days:4, phase:"cut", breakfast:1, prep:1, tk:null, tp:null, filter:"all", sel:{}, open:{}, checked:{}, cal:null, calDirty:true, pick:null}); save(); go(1); };
+
+// ============================================================ STEP 2
+function renderStep2(){
+  $("filters").innerHTML = FILTERS.map(([k, l]) => `<button class="${state.filter === k ? "on" : ""}" data-f="${k}">${l}</button>`).join("");
+  $("filters").onclick = e => { const b = e.target.closest("button"); if (!b) return; state.filter = b.dataset.f; save(); renderStep2(); };
+  const root = $("cats"); root.innerHTML = "";
+  activeCats().forEach(c => {
+    const sec = document.createElement("div"); sec.className = "cat";
+    const h = have(c.k), ok = doneCat(c.k);
+    let cnt = c.k === "col" ? `${h} / ${needCol()}${excess() ? `<small>+${excess()} spuntini</small>` : ""}`
+            : c.k === "spu" ? `${h + excess()}<small>consigliati ${needSpu()}</small>` : `${h} / ${need(c.k)}`;
+    sec.innerHTML = `<div class="cathead"><h2>${c.name}${c.k === "spu" ? '<small>merenda o pre-nanna, quanti ne vuoi</small>' : c.k === "col" ? `<small>${state.breakfast ? "quelle in più contano come spuntini" : "colazione saltata: qui scegli solo quelle che vuoi come spuntino"}</small>` : ""}</h2><div class="count ${ok ? "ok" : ""}">${cnt}</div></div>`;
+    if (c.k === "spu" && excess()) sec.insertAdjacentHTML("beforeend", `<div class="excess"><span>Eccesso colazioni: porzioni di colazione che mangi come spuntino</span><b>${excess()}</b></div>`);
+    const full = ["pra","cen"].includes(c.k) && h >= need(c.k);
+    MEALS.filter(m => m.cats.includes(c.k)).filter(m => state.filter === "all" || m.tags.includes(state.filter) || sel(c.k, m.id))
+      .forEach(m => sec.appendChild(mealRow(m, c.k, full)));
+    root.appendChild(sec);
+  });
+}
+function fmtQ(q, u, k){
+  if (!u) return "q.b.";
+  let v;
+  if (u === "pz" && k === "uova") v = Math.max(1, Math.round(q));
+  else if (["pz","scatolette","scatole","buste"].includes(u)) v = Math.round(q * 2) / 2;
+  else if (u === "scoop") v = Math.round(q * 4) / 4;
+  else if (u === "g") v = q < 20 ? Math.round(q) : Math.round(q / 5) * 5;
+  else v = Math.round(q / 10) * 10;
+  if (v === 0 && q > 0) v = Math.round(q) || q;
+  let s = (Math.round(v * 100) / 100).toString().replace(".", ",");
+  if (u === "g" && v >= 1000) return (v / 1000).toString().replace(".", ",") + " kg";
+  if (u === "ml" && v >= 1000) return (v / 1000).toString().replace(".", ",") + " L";
+  return s + " " + u;
+}
+const ingText = (pairs, mult) => pairs.map(([k, q]) => `${ING[k].n}${q ? " " + fmtQ(q * mult, ING[k].u, k) : " q.b."}`).join(", ");
+const ingList = (pairs, mult) => "<ul>" + pairs.map(([k, q]) => `<li>${ING[k].n}${q ? ": " + fmtQ(q * mult, ING[k].u, k) : " q.b."}</li>`).join("") + "</ul>";
+function recipeBox(m){
+  const r = recipeOf(m), n = Math.max(1, totalOf(m));
+  if (r){
+    const batches = Math.max(1, Math.round(n / r.n));
+    let h = `<h4>${r.name}</h4><p class="base">Una ricetta = ${r.n} porzioni da ${r.unit} · ~${r.min} min · in frigo ${r.keep} giorni</p><p><b>Dosi per una ricetta</b></p>${ingList(r.ing, 1)}`;
+    if (batches > 1) h += `<p><b>Per le tue ${n} porzioni (${batches} ricette)</b></p>${ingList(r.ing, batches)}`;
+    const extra = m.ing.filter(i => i[0][0] !== "@"); if (extra.length) h += `<p><b>In più, per porzione</b></p>${ingList(extra, 1)}`;
+    return h + `<p>${r.steps}</p>`;
+  }
+  let h = `<p><b>Per 1 porzione</b></p>${ingList(m.ing, 1)}`;
+  if (n > 1) h += `<p><b>Per le tue ${n} porzioni</b>${m.batchOK ? " — si può cucinare tutto insieme" + (m.keep ? `, regge ${m.keep} giorni` : "") : ""}</p>${ingList(m.ing, n)}`;
+  return h + (m.steps ? `<p>${m.steps}</p>` : "");
+}
+function mealRow(m, cat, full){
+  const q = sel(cat, m.id), k = key(cat, m.id), r = recipeOf(m), st = stepOf(m), off = blocked(m);
+  const row = document.createElement("div"); row.className = "meal" + (q ? " sel" : "") + (off ? " off" : "");
+  const other = totalOf(m) - q;
+  let portion = r ? `si sceglie a ricette intere: +${r.n} porzioni` + (q ? ` · ${q / r.n} ${q / r.n > 1 ? "ricette" : "ricetta"}` : "") : m.pair ? "2 porzioni per padellata: colazione + spuntino lo stesso giorno" : m.batchOK && q > 1 ? `${q} porzioni: cucinale insieme, dosi nella ricetta` : "";
+  if (other) portion += (portion ? " · " : "") + `già scelto ${other} volte in un'altra categoria`;
+  if (off) portion = "Richiede meal prep: attivalo nella prima pagina";
+  const canAdd = !off && !full && (["pra","cen"].includes(cat) ? have(cat) + st <= need(cat) : true);
+  row.innerHTML = `<div class="mrow"><div class="t"><div class="n">${m.name}</div><div class="d">${m.desc}</div>
+    <div class="tags">${m.tags.map(t => `<span class="tag ${t}">${TAG_LABEL[t]}</span>`).join("")}</div>
+    ${portion ? `<div class="portion">${portion}</div>` : ""}
+    <div class="macro">~${m.kcal} kcal · P ${m.prot} · C ${m.carb} · G ${m.fat}<button type="button">${state.open[k] ? "Chiudi ricetta" : "Ricetta"}</button></div>${fatsLine(m) ? `<div class="fats">Grassi aggiunti previsti: <b>${fatsLine(m)}</b></div>` : ""}</div>
+    <div class="stp"><button aria-label="Togli" ${q ? "" : "disabled"}>−</button><b class="${q ? "" : "z"}">${q}</b><button aria-label="Aggiungi" ${canAdd ? "" : "disabled"}>+</button></div></div>
+    ${state.open[k] ? `<div class="recipe">${recipeBox(m)}</div>` : ""}`;
+  const [minus, , plus] = row.querySelector(".stp").children;
+  minus.onclick = () => { state.sel[k] = Math.max(0, q - st); if (!state.sel[k]) delete state.sel[k]; touch(); renderStep2(); renderBar(); };
+  plus.onclick = () => { state.sel[k] = q + st; touch(); renderStep2(); renderBar(); };
+  row.querySelector(".macro button").onclick = () => { state.open[k] = !state.open[k]; renderStep2(); };
+  return row;
+}
+function autoFill(){
+  const has = keys => MEALS.some(m => hasAny(m, keys) && totalOf(m));
+  const fillCat = (k, missing) => {
+    let pool = MEALS.filter(m => m.cats.includes(k) && totalOf(m) === 0 && !blocked(m) && stepOf(m) <= missing && !m.pair).sort(() => Math.random() - .5);
+    pool.sort((a, b) => hasAny(a, ROSSA) - hasAny(b, ROSSA));
+    pool.sort((a, b) => (stepOf(a) > 1) - (stepOf(b) > 1));   // le ricette da teglia per ultime: riempiono troppi giorni con lo stesso piatto
+    if (["pra","cen"].includes(k) && state.days >= 2 && !has(ROSSA)){ const i = pool.findIndex(m => hasAny(m, ROSSA)); if (i > 1) pool.splice(1, 0, pool.splice(i, 1)[0]); }
+    [LEGUMI, PESCE].forEach(keys => { if (state.days >= 3 && !has(keys)){ const i = pool.findIndex(m => hasAny(m, keys) && stepOf(m) === 1); if (i > 0) pool.unshift(pool.splice(i, 1)[0]); } });
+    for (const m of pool){ const st = stepOf(m); if (st > missing) continue; state.sel[key(k, m.id)] = sel(k, m.id) + st; missing -= st; if (!missing) break; }
+    let guard = 20;
+    while (missing > 0 && guard--){ const m = MEALS.filter(x => x.cats.includes(k) && !blocked(x) && stepOf(x) <= missing && x.id !== "s_battuta" && !x.pair).sort(() => Math.random() - .5)[0]; if (!m) break; state.sel[key(k, m.id)] = sel(k, m.id) + stepOf(m); missing -= stepOf(m); }
+  };
+  if (state.breakfast) fillCat("col", Math.max(0, needCol() - have("col")));
+  fillCat("pra", need("pra") - have("pra")); fillCat("cen", need("cen") - have("cen"));
+  fillCat("spu", Math.max(0, needSpu() - have("spu") - excess()));
+  touch(); renderStep2(); renderBar(); toast("Piatti mancanti scelti a caso: cambia quello che non ti va");
+}
+
+// ============================================================ STEP 3 — bilancio
+function selected(){ const out = []; MEALS.forEach(m => m.cats.forEach(c => { const n = sel(c, m.id); if (n) out.push({m, cat: c, n}); })); return out; }
+function totals(){
+  const s = selected(), d = state.days, sum = f => s.reduce((a, x) => a + f(x.m) * x.n, 0) / d;
+  const ing = {}; s.forEach(x => Object.entries(portionIng(x.m)).forEach(([k, q]) => ing[k] = (ing[k] || 0) + q * x.n));
+  const count = keys => s.reduce((a, x) => a + (hasAny(x.m, keys) ? x.n : 0), 0);
+  const snacks = s.filter(x => x.cat === "spu").reduce((a, x) => a + x.n, 0) + excess();
+  return {kcal:sum(m => m.kcal), prot:sum(m => m.prot), carb:sum(m => m.carb), fat:sum(m => m.fat), ing, s,
+    rossa:count(ROSSA), pesce:count(PESCE), legumi:count(LEGUMI), veg:count(VEG), frutta:(ing.banane || 0) + (ing.mele || 0), uova:(ing.uova || 0) / d,
+    dolci:s.filter(x => x.cat === "spu" && x.m.tags.includes("dolce")).reduce((a, x) => a + x.n, 0) + excess(), snacks};
+}
+function renderStep3(){
+  const t = totals(), d = state.days, TK = tkcal(), TP = tprot();
+  const carbR = state.phase === "bulk" ? [340, 470] : [230, 330], fatR = state.phase === "bulk" ? [70, 115] : [60, 95];
+  const judge = (v, lo, hi) => v < lo ? ["low","sotto"] : v > hi ? ["high","sopra"] : ["ok","in linea"];
+  const card = (v, unit, label, lo, hi) => { const [c, w] = judge(v, lo, hi); return `<div><b>${v}${unit}</b><span>${label}</span><i class="${c}">${w} · ${lo}–${hi}</i></div>`; };
+  $("stats").innerHTML = card(Math.round(t.kcal / 25) * 25, "", "kcal al giorno", TK - 150, TK + 150) + card(Math.round(t.prot), " g", "proteine", TP - 15, TP + 60)
+    + card(Math.round(t.carb), " g", "carboidrati", carbR[0], carbR[1]) + card(Math.round(t.fat), " g", "grassi", fatR[0], fatR[1]);
+  $("slots").innerHTML = activeCats().filter(c => c.k !== "col" || state.breakfast || have("col")).map(c => { const xs = t.s.filter(x => x.cat === c.k); const n = xs.reduce((a, x) => a + x.n, 0) || 1;
+    return `<div>${c.name}<b>~${Math.round(xs.reduce((a, x) => a + x.m.kcal * x.n, 0) / n)} kcal · ${Math.round(xs.reduce((a, x) => a + x.m.prot * x.n, 0) / n)} g P</b>a porzione, in media</div>`; }).join("");
+  const notes = [], add = (cls, txt) => notes.push(`<div class="note ${cls}">${txt}</div>`);
+  if (t.kcal < TK - 150) add("bad", `Sei a ~${Math.round(t.kcal)} kcal, sotto il tuo target di ${TK}. ${state.breakfast ? "Scegli pranzi o cene più grandi (impanato, polpette, curry, quesadillas) o spuntini più pieni (piadina, shake, muffin, banana bread)." : "Senza colazione devi recuperare a pranzo e cena: piatti da 850+ kcal e spuntini pieni, oppure 30–40 g di pasta in più a pranzo."}`);
+  if (t.kcal > TK + 150) add("bad", `Sei a ~${Math.round(t.kcal)} kcal, sopra il tuo target di ${TK}. Spuntini più leggeri (battuta, uova sode, mela e mandorle, brownies) o patate a 200 g nelle cene.`);
+  if (t.prot < TP - 15) add("bad", `Proteine a ${Math.round(t.prot)} g contro un target di ${TP}. Scambia toast dolce o fondente e noci con tortino, brownies, pane e arrosto o shake.`);
+  else if (t.prot > TP + 60) add("info", `Proteine a ${Math.round(t.prot)} g: ben oltre il target. Non fa male, ma puoi spostare quelle calorie sui carboidrati, che in palestra rendono di più.`);
+  if (t.carb < carbR[0]) add("", `Carboidrati a ${Math.round(t.carb)} g: bassi per chi si allena alle 18. Pre-workout con carbo (banana e gallette, pane e arrosto, banana bread) e porzioni di pasta piene.`);
+  if (t.fat > fatR[1]) add("", `Grassi a ${Math.round(t.fat)} g: alti. Di solito sono caprese, fondente e noci, frittata e bistecca con uova negli stessi giorni: alternali.`);
+  if (t.fat < fatR[0]) add("", `Grassi a ${Math.round(t.fat)} g: pochi per gli ormoni. Olio EVO sui piatti, un salmone o fondente e noci come spuntino.`);
+  if (t.rossa > Math.ceil(d * 0.75)) add("bad", `Carne rossa ${t.rossa} volte in ${d} giorni (battuta compresa): oltre il tetto di 4–5 a settimana. Metti pollo, pesce o uova al posto di una.`);
+  if (d >= 3 && t.pesce === 0) add("", `Niente pesce in ${d} giorni. Pasta al salmone o ai gamberi in 15 minuti; punta a 2 volte a settimana.`);
+  if (d >= 3 && t.legumi === 0) add("", `Zero legumi. Cous cous con ceci, curry con piselli, chili, lenticchie e tonno o hummus: fibre e ferro senza sentirli.`);
+  if (t.veg < d * 1.5) add("", `Verdura solo in ${t.veg} pasti su ${d} giorni. Pomodorini e insalata accanto a pranzo e cena bastano: aggiungili anche dove la ricetta non li ha.`);
+  if (t.frutta < d * 1.5) add("", `Frutta: ${Math.round(t.frutta)} pezzi in ${d} giorni. Punta a 2 al giorno: banana pre-workout e mela con le mandorle sono i modi più facili.`);
+  if (sel("spu","s_battuta") > Math.max(1, Math.ceil(d / 2))) add("", `Battuta ${sel("spu","s_battuta")} volte in ${d} giorni: oltre la seconda va in freezer. Massimo 3 a settimana.`);
+  if (t.snacks >= 3 && t.dolci / t.snacks > 0.7) add("info", `${t.dolci} spuntini dolci su ${t.snacks}: bene per il palato, ma un paio di salati (battuta, pane e arrosto, uova sode, hummus) tengono la fame più a bada la sera.`);
+  if (t.uova > 4) add("info", `Media ${t.uova.toFixed(1)} uova al giorno: tante. Non è un problema per chi si allena, ma ruota un po'.`);
+  const rep = t.s.filter(x => x.n >= 3 && d <= 4 && !recipeOf(x.m)).map(x => x.m.name);
+  if (rep.length) add("info", `Ripeti ${rep.join(", ")} 3+ volte in pochi giorni: ok se ti va, altrimenti spezza con un piatto simile.`);
+  const short = selected().filter(x => { const r = recipeOf(x.m); const keep = r ? r.keep : x.m.keep || x.m.fresh; return keep && keep < d && (x.n > keep); }).map(x => x.m.name);
+  if (short.length) add("", `${short.join(", ")}: più porzioni di quanti giorni regge in frigo. Il calendario le mette all'inizio; il resto va in freezer.`);
+  const prepMin = prepPlan().reduce((a, p) => a + p.min, 0);
+  if (prepMin) add("info", `Il giorno della spesa hai ~${prepMin} minuti di preparazioni (forno e padella in parallelo, in pratica meno).`);
+  if (!notes.length) add("ok", `Tutto in linea: calorie, proteine, carne rossa ${t.rossa}, pesce ${t.pesce}, legumi ${t.legumi} su ${d} giorni.`);
+  else if (!notes.some(n => n.includes("note bad"))) notes.unshift(`<div class="note ok">Nessun problema grosso: sotto qualche aggiustamento facoltativo.</div>`);
+  $("advice").innerHTML = notes.join("");
+}
+
+// ============================================================ STEP 4 — calendario
+function keepOf(m){ const r = recipeOf(m); return r ? r.keep : m.keep || m.fresh || 99; }
+function buildCal(){
+  const d = state.days, k = state.phase === "bulk" ? 2 : 1;
+  const cal = {col:[], pra:[], cen:[], spu:[]}; for (let i = 0; i < d; i++){ cal.col.push([]); cal.pra.push([]); cal.cen.push([]); cal.spu.push([]); }
+  const nSpu = have("spu") + excess();
+  const cap = {col:state.breakfast ? 1 : 0, pra:1, cen:1, spu:Math.max(1, Math.ceil(nSpu / d))};
+  const hasRossa = day => ["pra","cen","spu"].some(c => cal[c][day].some(id => hasAny(byId(id), ROSSA)));
+  const cost = (m, c, day) => {
+    if (cal[c][day].length >= cap[c]) return 1e6;
+    let s = 0; const keep = keepOf(m);
+    if (day + 1 > keep) s += 500 + day * 20;
+    if (keep < 99) s += day * 3;
+    if (cal[c][day].includes(m.id)) s += 80;
+    if (day > 0 && cal[c][day - 1].includes(m.id)) s += 40;
+    if (day < d - 1 && cal[c][day + 1].includes(m.id)) s += 40;
+    if (hasAny(m, ROSSA) && hasRossa(day)) s += m.id === "s_battuta" ? 300 : 60;
+    if (m.id === "s_battuta" && day > 1) s += 150;
+    if (hasAny(m, PESCE)){ for (const c2 of ["pra","cen"]) if (cal[c2][day].some(id => hasAny(byId(id), PESCE))) s += 30; }
+    return s + Math.random() * 4;
+  };
+  const place = (m, c) => { let best = -1, bc = 1e9; for (let day = 0; day < d; day++){ const x = cost(m, c, day); if (x < bc){ bc = x; best = day; } } if (bc >= 1e6) return -1; cal[c][best].push(m.id); return best; };
+  const list = c => { const out = []; MEALS.forEach(m => { for (let i = 0; i < sel(c, m.id); i++) out.push(m); }); return out.sort((a, b) => keepOf(a) - keepOf(b)); };
+  // pancake: le 2 porzioni lo stesso giorno (colazione + spuntino)
+  let colList = list("col"), spuList = list("spu");
+  const pairs = MEALS.filter(m => m.pair);
+  pairs.forEach(m => { let n = totalOf(m); colList = colList.filter(x => x !== m); spuList = spuList.filter(x => x !== m);
+    while (n >= 2){ let best = -1, bc = 1e9; for (let day = 0; day < d; day++){ const x = cost(m, "col", day) + cost(m, "spu", day); if (x < bc){ bc = x; best = day; } }
+      if (bc >= 1e6) break; cal.col[best].push(m.id); cal.spu[best].push(m.id); n -= 2; }
+    while (n-- > 0) (cal.col.some(x => x.length === 0) ? colList : spuList).push(m); });
+  list("pra").forEach(m => place(m, "pra")); list("cen").forEach(m => place(m, "cen"));
+  // colazioni: le prime riempiono i giorni, le altre diventano spuntini
+  colList.forEach(m => { const day = place(m, "col"); if (day < 0 || cal.col[day].length > 1){ if (day >= 0) cal.col[day].pop(); spuList.push(m); } });
+  spuList.sort((a, b) => keepOf(a) - keepOf(b)).forEach(m => place(m, "spu"));
+  return cal;
+}
+const byId = id => MEALS.find(m => m.id === id);
+function calWarnings(){
+  const w = [], cal = state.cal; if (!cal) return w;
+  for (let day = 0; day < state.days; day++){
+    ["col","pra","cen","spu"].forEach(c => cal[c][day].forEach(id => { const m = byId(id), keep = keepOf(m);
+      if (day + 1 > keep) w.push(`${m.name} il giorno ${day + 1} è oltre i ${keep} giorni: congela quella porzione il giorno della spesa.`); }));
+    if (cal.spu[day].includes("s_battuta") && ["pra","cen"].some(c => cal[c][day].some(id => hasAny(byId(id), ROSSA)))) w.push(`Giorno ${day + 1}: battuta e altra carne rossa lo stesso giorno. Sposta la battuta.`);
+  }
+  return [...new Set(w)];
+}
+function renderStep4(){
+  if (state.calDirty || !state.cal || state.cal.pra.length !== state.days){ state.cal = buildCal(); state.calDirty = false; save(); }
+  const w = calWarnings();
+  $("calwarn").innerHTML = w.length ? w.map(x => `<div class="note">${x}</div>`).join("") : `<div class="note ok">Tutto entro i giorni di frigo. Giorno 1 = giorno della spesa.</div>`;
+  const root = $("cal"); root.innerHTML = "";
+  const LBL = {col:"Colazione", pra:"Pranzo", spu:"Spuntini", cen:"Cena"};
+  for (let day = 0; day < state.days; day++){
+    const dayK = ["col","pra","spu","cen"].reduce((a, c) => a + state.cal[c][day].reduce((b, id) => b + byId(id).kcal, 0), 0);
+    const dayP = ["col","pra","spu","cen"].reduce((a, c) => a + state.cal[c][day].reduce((b, id) => b + byId(id).prot, 0), 0);
+    const box = document.createElement("div"); box.className = "day";
+    box.innerHTML = `<h3>Giorno ${day + 1}${day === 0 ? " · spesa" : ""}<small>~${dayK} kcal · ${dayP} g P</small></h3>`;
+    ["col","pra","spu","cen"].forEach(c => {
+      if (c === "col" && !state.breakfast) return;
+      const slot = document.createElement("div"); slot.className = "slot"; slot.innerHTML = `<div class="l">${LBL[c]}</div><div class="chips"></div>`;
+      const chips = slot.querySelector(".chips");
+      state.cal[c][day].forEach((id, idx) => { const m = byId(id); const b = document.createElement("button"); b.className = "chip";
+        const warn = day + 1 > keepOf(m); if (warn) b.classList.add("warn");
+        if (state.pick && state.pick.c === c && state.pick.day === day && state.pick.idx === idx) b.classList.add("pick");
+        b.innerHTML = `${m.name}${c === "spu" && m.cats.includes("col") && !m.cats.includes("spu") ? "<small>colazione in più</small>" : ""}${warn ? "<small>oltre i giorni di frigo</small>" : ""}`;
+        b.onclick = () => pickChip(c, day, idx); chips.appendChild(b); });
+      if (!state.cal[c][day].length) chips.innerHTML = `<span class="hint" style="padding-top:8px">—</span>`;
+      box.appendChild(slot);
+    });
+    root.appendChild(box);
+  }
+}
+function pickChip(c, day, idx){
+  const p = state.pick;
+  if (!p){ state.pick = {c, day, idx}; renderStep4(); return; }
+  if (p.c !== c){ toast("Puoi scambiare solo pasti dello stesso tipo"); state.pick = null; renderStep4(); return; }
+  const a = state.cal[c][p.day][p.idx], b = state.cal[c][day][idx];
+  state.cal[c][p.day][p.idx] = b; state.cal[c][day][idx] = a; state.pick = null; save(); renderStep4();
+}
+
+// ============================================================ STEP 5 — lista, meal prep, copie
+function roundUp(x, r){ return Math.max(0, Math.ceil(x / r - 1e-9) * r); }
+function buildList(){ const g = {}; Object.entries(totals().ing).forEach(([k, q]) => { const i = ING[k]; (g[i.c] = g[i.c] || []).push({k, i, q: roundUp(q, i.r)}); });
+  Object.values(g).forEach(a => a.sort((x, y) => (x.i.p || 0) - (y.i.p || 0) || x.i.n.localeCompare(y.i.n))); return g; }
+function prepPlan(){
+  const s = selected(), out = [];
+  Object.entries(RECIPES).forEach(([rk, r]) => {
+    const portions = s.reduce((a, x) => a + x.n * (x.m.ing.some(i => i[0] === "@" + rk) ? 1 : 0), 0); if (!portions) return;
+    const b = Math.round(portions / r.n);
+    out.push({title: `${r.name}${b > 1 ? ` ×${b}` : ""}`, min: Math.round(r.min * (b > 1 ? 1 + (b - 1) * 0.4 : 1)),
+      text: `${portions} porzioni = ${b} ${b > 1 ? "ricette" : "ricetta"}, in frigo ${r.keep} giorni`, ing: ingText(r.ing, b), html: `<p class="base">${portions} porzioni = ${b} ${b > 1 ? "ricette" : "ricetta"} · in frigo ${r.keep} giorni</p>${ingList(r.ing, b)}`, steps: r.steps});
+  });
+  s.filter(x => x.m.batchOK && !recipeOf(x.m) && x.n >= 2 && x.m.tags.includes("prep") === false && state.prep).forEach(x =>
+    out.push({title: `${x.m.name} ×${x.n} (facoltativo)`, min: 20, text: `si può cucinare tutto insieme${x.m.keep ? `, regge ${x.m.keep} giorni` : ""}`, ing: ingText(x.m.ing, x.n), html: `<p class="base">Si può cucinare tutto insieme${x.m.keep ? `, regge ${x.m.keep} giorni` : ""}</p>${ingList(x.m.ing, x.n)}`, steps: x.m.steps}));
+  const pat = s.filter(x => portionIng(x.m).patate).reduce((a, x) => a + x.n, 0);
+  if (pat >= 2 && state.prep) out.push({title: "Patate al forno", min: 10, text: `${pat} porzioni`, ing: `Patate ${fmtQ(pat * 300, "g")}`, html: `<p class="base">${pat} porzioni: a spicchi con olio, paprika e rosmarino, 200 °C per 40 minuti mentre fai il resto. In frigo 4 giorni.</p>`, steps: "A spicchi con olio, paprika e rosmarino, 200 °C per 40 minuti. In frigo 4 giorni."});
+  if (sel("spu","s_sode")) out.push({title: "Uova sode", min: 10, text: `${sel("spu","s_sode") * 2} uova`, ing: `Uova ${sel("spu","s_sode") * 2} pz`, html: `<p class="base">${sel("spu","s_sode") * 2} uova, 9 minuti, poi in acqua fredda.</p>`, steps: "9 minuti in acqua bollente, poi in acqua fredda; sbucciate in frigo."});
+  if (sel("cen","c_teriyaki")) out.push({title: "Marinata teriyaki", min: 5, text: "pollo a strisce in soia, miele, aglio e zenzero", ing: `Pollo ${fmtQ(sel("cen","c_teriyaki") * 200, "g")}, salsa di soia, miele, aglio, zenzero`, html: `<p class="base">Pollo a strisce in soia, miele, aglio e zenzero. Si mangia entro 3 giorni.</p>`, steps: "Marinare in frigo, mangiare entro 3 giorni."});
+  if (sel("spu","s_battuta") > 2) out.push({title: "Battuta", min: 2, text: "porzioni oltre la seconda in freezer", ing: "", html: `<p class="base">Le porzioni oltre la seconda in freezer; scongela in frigo la mattina stessa.</p>`, steps: "Scongelare in frigo la mattina stessa."});
+  return out;
+}
+function renderStep5(){
+  const groups = buildList(), root = $("list"); root.innerHTML = "";
+  CAT_ORDER.forEach(c => { if (!groups[c]) return;
+    const g = document.createElement("div"); g.className = "grp"; g.innerHTML = `<h3>${CAT_LABEL[c]}</h3>`;
+    groups[c].forEach(({k, i, q}) => { const row = document.createElement("label"); row.className = "item" + (state.checked[k] ? " done" : "");
+      const qty = i.p ? (i.u && q ? `${fmtQ(q, i.u, k)} · controlla` : "controlla") : fmtQ(q, i.u, k);
+      row.innerHTML = `<input type="checkbox" ${state.checked[k] ? "checked" : ""}><div class="n">${i.n}${i.s ? `<small>${i.s}</small>` : ""}</div><div class="q">${qty}</div>`;
+      row.querySelector("input").onchange = e => { state.checked[k] = e.target.checked; row.classList.toggle("done", e.target.checked); save(); };
+      g.appendChild(row); });
+    root.appendChild(g); });
+  const prep = prepPlan();
+  $("prep").innerHTML = prep.length ? prep.map(p => `<h4>${p.title} <span class="base">· ~${p.min} min</span></h4>${p.html}<p>${p.steps}</p>`).join("") : "Con questi piatti non serve niente in anticipo.";
+  $("copyprep").onclick = () => copy(prepText(), "Preparazione copiata");
+  $("copymeals").onclick = () => copy(mealsText(), "Pasti copiati");
+}
+function listText(){
+  const g = buildList(); let out = `Spesa ${state.days} giorni (${state.phase})\n`; let n = 0;
+  CAT_ORDER.forEach(c => { if (!g[c]) return; const rows = g[c].filter(x => !state.checked[x.k]); if (!rows.length) return;
+    out += `\n${CAT_LABEL[c]}\n`; rows.forEach(({k, i, q}) => { n++; out += `- ${i.n}${i.p ? " (controlla)" : ""}${q && i.u ? ": " + fmtQ(q, i.u, k) : ""}\n`; }); });
+  return n ? out : "Hai spuntato tutto: niente da comprare.";
+}
+function prepText(){
+  const p = prepPlan(); if (!p.length) return "Niente da preparare il giorno della spesa.";
+  return `Meal prep del giorno della spesa (~${p.reduce((a, x) => a + x.min, 0)} min)\n\n` + p.map(x => `${x.title} — ${x.text}\n${x.ing ? "Ingredienti: " + x.ing + "\n" : ""}${x.steps}`).join("\n\n");
+}
+function mealsText(){
+  const s = selected(), lines = [`Pasti per ${state.days} giorni (${state.phase})`];
+  activeCats().forEach(c => { const xs = s.filter(x => x.cat === c.k); if (!xs.length) return; lines.push(`\n${c.name.toUpperCase()}`);
+    xs.forEach(x => { const r = recipeOf(x.m); const steps = (r ? r.steps : x.m.steps || "").split(/(?<=\.)\s+/).slice(0, 2).join(" ");
+      lines.push(`• ${x.m.name}${x.n > 1 ? ` ×${x.n}` : ""} — ${x.m.kcal} kcal, ${x.m.prot} g P${fatsLine(x.m) ? " · " + fatsLine(x.m) : ""}`);
+      lines.push(`  ${r ? `Ricetta da ${r.n} porzioni: ` + ingText(r.ing, 1) : ingText(x.m.ing, 1)}`);
+      if (steps) lines.push(`  ${steps}`); }); });
+  if (state.cal){ lines.push("\nCALENDARIO"); const L = {col:"colazione", pra:"pranzo", spu:"spuntini", cen:"cena"};
+    for (let d = 0; d < state.days; d++) lines.push(`Giorno ${d + 1}: ` + ["col","pra","spu","cen"].filter(c => state.cal[c][d].length).map(c => `${L[c]}: ${state.cal[c][d].map(id => byId(id).name).join(" + ")}`).join(" · ")); }
+  return lines.join("\n");
+}
+function copy(text, msg){
+  const ok = () => toast(msg);
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(ok, () => fallbackCopy(text, ok)); else fallbackCopy(text, ok);
+}
+function fallbackCopy(text, cb){
+  const ta = document.createElement("textarea"); ta.value = text; ta.style.position = "fixed"; ta.style.opacity = 0;
+  document.body.appendChild(ta); ta.select(); try { document.execCommand("copy"); cb(); } catch (e) { toast("Copia non riuscita: seleziona e copia a mano"); } document.body.removeChild(ta);
+}
+
+// ============================================================ NAVIGAZIONE
+const LEAD = [null, "Quanti giorni deve coprire questa spesa, in che fase sei e quanto tempo hai per cucinare.",
+  "Scegli i pasti. Ogni + è una porzione; i piatti da teglia si scelgono a ricette intere. Le colazioni oltre i giorni contano come spuntini; gli spuntini non hanno limite.",
+  "Media giornaliera dei pasti scelti e cosa sistemare prima di andare a fare la spesa.",
+  "I pasti assegnati ai giorni: le preparazioni prima che scadano, la battuta lontana dalla carne rossa.",
+  "Spunta mentre giri. Le quantità coprono esattamente i pasti scelti."];
+function go(step){
+  state.step = step; save();
+  ["s1","s2","s3","s4","s5"].forEach((id, i) => $(id).classList.toggle("hidden", i + 1 !== step));
+  [...$("steps").children].forEach((d, i) => d.classList.toggle("on", i + 1 <= step));
+  $("lead").textContent = LEAD[step];
+  ({1: renderStep1, 2: renderStep2, 3: renderStep3, 4: renderStep4, 5: renderStep5})[step]();
+  renderBar(); window.scrollTo(0, 0);
+}
+function renderBar(){
+  const b = $("bar");
+  renderBarInner(b);
+  const t = document.createElement("button"); t.className = "theme"; t.title = state.dark ? "Modalità chiara" : "Modalità notte"; t.textContent = state.dark ? "☀" : "☾";
+  t.onclick = () => { state.dark = state.dark ? 0 : 1; save(); applyTheme(); renderBar(); };
+  b.prepend(t);
+}
+function renderBarInner(b){
+  if (state.step === 1){
+    b.innerHTML = `<span class="hint grow">${state.days} giorni · ${state.phase}${state.breakfast ? "" : " · senza colazione"}${state.prep ? "" : " · senza meal prep"}</span><button class="btn pri">Scegli i pasti</button>`;
+    b.querySelector(".pri").onclick = () => go(2);
+  } else if (state.step === 2){
+    const done = allDone();
+    const missing = (state.breakfast ? Math.max(0, needCol() - have("col")) : 0) + Math.max(0, need("pra") - have("pra")) + Math.max(0, need("cen") - have("cen"));
+    b.innerHTML = `<button class="btn ghost">Indietro</button>${done ? "" : '<button class="btn" id="auto">Scegli tu</button>'}<span class="hint grow">${done ? "Tutti i pasti scelti" : `Mancano ${missing} pasti`}</span><button class="btn pri" ${done ? "" : "disabled"}>Bilancio</button>`;
+    b.querySelector(".ghost").onclick = () => go(1); if (!done) b.querySelector("#auto").onclick = autoFill; b.querySelector(".pri").onclick = () => go(3);
+  } else if (state.step === 3){
+    b.innerHTML = `<button class="btn ghost">Cambia pasti</button><span class="grow"></span><button class="btn pri">Calendario</button>`;
+    b.querySelector(".ghost").onclick = () => go(2); b.querySelector(".pri").onclick = () => go(4);
+  } else if (state.step === 4){
+    b.innerHTML = `<button class="btn ghost">Bilancio</button><button class="btn" id="shuffle">Rimescola</button><span class="grow"></span><button class="btn pri">Lista della spesa</button>`;
+    b.querySelector(".ghost").onclick = () => go(3); b.querySelector("#shuffle").onclick = () => { state.calDirty = true; renderStep4(); }; b.querySelector(".pri").onclick = () => go(5);
+  } else {
+    b.innerHTML = `<button class="btn ghost">Calendario</button><span class="grow"></span><button class="btn pri" id="copy">Copia lista</button>`;
+    b.querySelector(".ghost").onclick = () => go(4); b.querySelector("#copy").onclick = () => copy(listText(), "Lista copiata (senza le voci spuntate)");
+  }
+}
+let toastT;
+function toast(msg){ const t = $("toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("show"), 2200); }
+go(Math.min(state.step || 1, 5));
+</script>
+</body>
+</html>
